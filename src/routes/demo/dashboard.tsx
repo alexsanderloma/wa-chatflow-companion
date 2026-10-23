@@ -9,7 +9,14 @@ import { AgentStatusCard } from "@/components/dashboard/agent-status-card";
 import { MessageTimeline } from "@/components/dashboard/message-timeline";
 
 export const Route = createFileRoute("/demo/dashboard")({
-  head: () => ({ meta: [{ title: `${brand.name} — Demonstração` }] }),
+  head: () => ({ meta: [
+    { title: `${brand.name} — Dashboard de demonstração` },
+    { name: "description", content: "Explore a demonstração FLOWA com atendimentos por IA, CRM e agendamentos." },
+    { property: "og:title", content: `${brand.name} — Dashboard de demonstração` },
+    { property: "og:description", content: "Explore a demonstração FLOWA com atendimentos por IA, CRM e agendamentos." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: DemoDashboard,
 });
 
@@ -23,13 +30,13 @@ function DemoDashboard() {
   const csatMedia = (demoCsat.reduce((a, b) => a + b.score, 0) / demoCsat.length).toFixed(1);
   return (
     <div className="space-y-5">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+      <header className="grid sm:grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">
           <h1 className="font-display text-xl sm:text-2xl font-bold flex items-center gap-2">Dashboard <HelpTip text="Visão geral do dia: agendamentos, conversas, conversão e mensagens recentes. Tudo o que importa para o gestor em uma tela." /></h1>
           <p className="text-xs text-muted-foreground">Clínica Vitalis · visão geral do dia</p>
         </div>
-        <div className="flex items-center gap-2 bg-[rgba(124,58,237,.12)] border border-[rgba(124,58,237,.30)] text-[var(--brand-text)] text-[12.5px] font-semibold px-3 py-1.5 rounded-full">
-          <span className="size-2 rounded-full bg-[var(--brand)] shadow-[0_0_8px_var(--brand)]" /> Vivi conectada
+        <div className="flex items-center gap-2 bg-success-soft border border-success/20 text-success text-[12.5px] font-semibold px-3 py-1.5 rounded-full">
+          <span className="size-2 rounded-full bg-success" /> Vivi conectada
         </div>
       </header>
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
@@ -39,7 +46,7 @@ function DemoDashboard() {
         <KpiCard icon={<Star className="size-4" />} label="CSAT médio" value={`${csatMedia}/5`} trend={`${demoCsat.length} avaliações`} />
       </div>
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-4">
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-lg border border-border bg-card p-5">
           <h3 className="font-display text-[15px] font-semibold">Atendimentos · 14 dias</h3>
           <p className="text-xs text-muted-foreground mb-3">recebidas vs respondidas pela IA</p>
           <MiniAreaChart data={series} />
@@ -48,7 +55,7 @@ function DemoDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4">
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-lg border border-border bg-card p-5">
           <h3 className="font-display text-[15px] font-semibold flex items-center gap-2">
             <Calendar className="size-4 text-[var(--brand-text)]" /> Próximos agendamentos
           </h3>
@@ -73,7 +80,7 @@ function DemoDashboard() {
             ))}
           </div>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-lg border border-border bg-card p-5">
           <h3 className="font-display text-[15px] font-semibold">Últimas mensagens</h3>
           <p className="text-xs text-muted-foreground mb-2">atividade recente</p>
           <MessageTimeline items={last.slice(0, 6).map((m) => ({ id: m.id, nome: m.nome, autor: m.autor, texto: m.texto, quando: m.quando }))} />

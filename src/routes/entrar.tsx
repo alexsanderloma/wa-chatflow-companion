@@ -17,13 +17,21 @@ import {
   ArrowLeft,
   CheckCircle2,
 } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import { brand } from "@/config/brand";
 
 type Search = { modo?: "login" | "signup"; plano?: string };
 
 export const Route = createFileRoute("/entrar")({
   ssr: false,
-  head: () => ({ meta: [{ title: `${brand.name} — Começar` }] }),
+  head: () => ({ meta: [
+    { title: `${brand.name} — Acesso` },
+    { name: "description", content: "Acesse sua conta FLOWA para atender WhatsApp com IA 24/7 e organizar seu CRM Kanban." },
+    { property: "og:title", content: `${brand.name} — Acesso` },
+    { property: "og:description", content: "Acesse sua conta FLOWA para atender WhatsApp com IA 24/7 e organizar seu CRM Kanban." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): Search => ({
     modo: s.modo === "login" ? "login" : "signup",
     plano: typeof s.plano === "string" ? s.plano : undefined,
@@ -135,25 +143,9 @@ function EntrarPage() {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-background text-foreground">
-      {/* Ambient glows — same vibe as LP */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full blur-3xl opacity-40"
-          style={{ background: "radial-gradient(circle, #25D366 0%, transparent 60%)" }}
-        />
-        <div
-          className="absolute top-[30%] -right-40 h-[700px] w-[700px] rounded-full blur-3xl opacity-25"
-          style={{ background: "radial-gradient(circle, #06b6d4 0%, transparent 65%)" }}
-        />
-        <div
-          className="absolute bottom-[-200px] left-1/3 h-[500px] w-[500px] rounded-full blur-3xl opacity-20"
-          style={{ background: "radial-gradient(circle, #16A34A 0%, transparent 60%)" }}
-        />
-      </div>
-
       <div className="relative z-10 min-h-screen grid lg:grid-cols-[1.05fr_1fr]">
         {/* LEFT — brand pane (hidden on mobile) */}
-        <aside className="hidden lg:flex flex-col justify-between p-10 xl:p-14 border-r border-[color:var(--hairline)] bg-[linear-gradient(160deg,rgba(22,163,74,.10),rgba(34,211,238,.04)_55%,transparent)]">
+        <aside className="hidden lg:flex flex-col justify-between p-10 xl:p-14 border-r border-[color:var(--hairline)] bg-card">
           <div className="flex items-center gap-3">
             <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="size-4" />
@@ -163,16 +155,14 @@ function EntrarPage() {
 
           <div className="space-y-8 max-w-lg">
             <div className="flex items-center gap-3">
-              <div className="size-12 rounded-2xl grid place-items-center bg-gradient-brand text-primary-foreground shadow-[0_10px_30px_-10px_rgba(22,163,74,.6)] ring-1 ring-white/20">
-                <MessageSquareText className="size-6" strokeWidth={2.4} />
-              </div>
+              <BrandMark className="size-12" />
               <div>
-                <div className="font-display font-extrabold text-2xl text-gradient-brand leading-none">{brand.name}</div>
+                <div className="font-display font-extrabold text-2xl text-foreground leading-none">{brand.name}</div>
                 <div className="text-[12px] text-muted-foreground mt-1">{brand.tagline}</div>
               </div>
             </div>
 
-            <h1 className="font-display text-4xl xl:text-5xl font-extrabold leading-[1.05] tracking-tight">
+            <h1 className="font-display text-4xl xl:text-5xl font-extrabold leading-[1.05] ">
               Sua IA atende o<br />
               <span className="text-gradient-brand">WhatsApp 24h</span> e<br />
               organiza o CRM sozinha.
@@ -208,25 +198,16 @@ function EntrarPage() {
               <ArrowLeft className="size-4" /> voltar
             </Link>
             <div className="flex items-center gap-2">
-              <div className="size-9 rounded-xl grid place-items-center bg-gradient-brand text-primary-foreground shadow-md">
-                <MessageSquareText className="size-4" />
-              </div>
+              <BrandMark className="size-9" />
               <div className="font-display font-bold text-[15px] text-gradient-brand">{brand.name}</div>
             </div>
           </div>
 
           <div className="w-full max-w-md">
-            <div className="relative panel p-7 sm:p-8 glow-brand overflow-hidden">
-              {/* corner accent */}
-              <div
-                aria-hidden
-                className="absolute -top-24 -right-24 size-56 rounded-full blur-3xl opacity-50"
-                style={{ background: "radial-gradient(circle, rgba(22,163,74,.35) 0%, transparent 70%)" }}
-              />
-
+            <div className="relative py-7 sm:py-8">
               <div className="relative">
                 {planInfo && (
-                  <div className="mb-5 rounded-xl border border-[color:var(--brand)]/30 bg-[color:var(--brand-soft)] p-4">
+                  <div className="mb-5 rounded-lg border border-[color:var(--brand)]/30 bg-[color:var(--brand-soft)] p-4">
                     <div className="flex items-center gap-2 text-[11px] uppercase font-bold tracking-[0.14em] text-[color:var(--brand-text)]">
                       <Sparkles className="size-3.5" /> Plano escolhido
                     </div>
@@ -243,7 +224,7 @@ function EntrarPage() {
                   {needsPassword ? "Acesso à conta" : "Cadastro em 1 clique"}
                 </div>
 
-                <h1 className="font-display text-[26px] sm:text-[28px] font-extrabold leading-tight tracking-tight">
+                <h1 className="font-display text-[26px] sm:text-[28px] font-extrabold leading-tight ">
                   {needsPassword ? "Bem-vindo de volta" : "Comece em 1 clique"}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1.5 mb-6">
@@ -283,7 +264,7 @@ function EntrarPage() {
                     type="submit"
                     disabled={loading}
                     size="lg"
-                    className="w-full h-12 bg-gradient-brand text-primary-foreground hover:opacity-95 font-semibold text-[14.5px] shadow-[0_8px_24px_-10px_rgba(22,163,74,.6)]"
+                    className="w-full h-12 bg-gradient-brand text-primary-foreground hover:opacity-95 font-semibold text-[14.5px] "
                   >
                     {loading && <Loader2 className="size-4 mr-2 animate-spin" />}
                     {needsPassword ? "Entrar e continuar" : planInfo ? "Continuar para o pagamento" : "Criar conta grátis"}
@@ -313,7 +294,7 @@ function EntrarPage() {
 
 function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-[color:var(--hairline)] bg-[color:var(--panel)]/60 backdrop-blur-sm p-3.5">
+    <div className="auth-feature flex items-start gap-3 py-4">
       <div className="size-9 rounded-lg grid place-items-center bg-[color:var(--brand-soft)] text-[color:var(--brand-text)] shrink-0 ring-1 ring-[color:var(--brand)]/15">
         {icon}
       </div>

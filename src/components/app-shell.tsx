@@ -1,4 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { BrandMark } from "@/components/brand-mark";
 import { type ReactNode } from "react";
 import {
   LayoutDashboard, Bot, KanbanSquare, LogOut, Smartphone, Shield,
@@ -70,7 +72,7 @@ export function AppShell({
     navigate({ to: "/entrar", replace: true });
   }
 
-  const primary = company?.primary_color || brand.primary;
+  const primary = "var(--brand)";
   const isAdmin = membership?.role === "owner" || membership?.role === "admin";
   const roleLabel =
     membership?.role === "owner" ? "Dono"
@@ -90,7 +92,7 @@ export function AppShell({
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground" style={{ ["--brand" as any]: primary }}>
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       {company && <TrialBanner company={company} />}
       {company && (
         <div className="hidden md:flex items-center justify-end gap-2 px-4 py-1.5 bg-[color:var(--panel)]/60 border-b border-[color:var(--hairline)]">
@@ -104,12 +106,7 @@ export function AppShell({
           {company?.logo_url ? (
             <img src={company.logo_url} alt={company.nome} className="size-8 rounded-lg object-cover ring-1 ring-[color:var(--hairline)]" />
           ) : (
-            <div
-              className="size-8 rounded-lg grid place-items-center text-primary-foreground shrink-0"
-              style={{ background: `linear-gradient(135deg, ${primary}, var(--brand-strong))` }}
-            >
-              <Zap className="size-4" strokeWidth={2.5} />
-            </div>
+            <BrandMark className="size-8" />
           )}
           <div className="min-w-0">
             <div className="font-display font-bold tracking-tight text-[14.5px] leading-none truncate">{brand.name}</div>
@@ -118,13 +115,13 @@ export function AppShell({
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <ThemeToggle />
-          <button
+          <Button variant="ghost" size="icon"
             onClick={signOut}
             title="Sair"
             className="size-9 grid place-items-center rounded-lg text-muted-foreground hover:text-foreground"
           >
             <LogOut className="size-[18px]" />
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -172,12 +169,7 @@ function Sidebar({
         {company?.logo_url ? (
           <img src={company.logo_url} alt={company.nome} className="size-10 rounded-xl object-cover ring-1 ring-[color:var(--hairline)]" />
         ) : (
-          <div
-            className="size-10 rounded-xl grid place-items-center text-primary-foreground shadow-md ring-1 ring-[color:var(--hairline)]"
-            style={{ background: `linear-gradient(135deg, ${primary}, var(--brand-strong))` }}
-          >
-            <Zap className="size-5" strokeWidth={2.5} />
-          </div>
+          <BrandMark className="size-10" />
         )}
         <div className="min-w-0">
           <div className="font-display font-extrabold tracking-tight truncate text-[16px]">{brand.name}</div>
@@ -217,9 +209,9 @@ function Sidebar({
             <div className="text-[13.5px] font-semibold truncate">{userName}</div>
             <div className="text-[11px] text-muted-foreground truncate" title={email || ""}>{roleLabel}</div>
           </div>
-          <button onClick={signOut} title="Sair" className="size-8 grid place-items-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-[color:var(--panel)]">
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sair" className="size-8 grid place-items-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-[color:var(--panel)]">
             <LogOut className="size-4" />
-          </button>
+          </Button>
         </div>
         <a
           href={supportWhatsappUrl}
@@ -249,7 +241,7 @@ function NavLink({ item, active, primary }: { item: NavItem; active: boolean; pr
         active
           ? {
               background: "var(--brand-soft)",
-              boxShadow: `inset 0 0 0 1px var(--brand-soft-strong), 0 0 22px -10px ${primary}`,
+              boxShadow: `inset 0 0 0 1px var(--brand-soft-strong), 0 0 0 0 transparent`,
             }
           : undefined
       }
@@ -257,7 +249,7 @@ function NavLink({ item, active, primary }: { item: NavItem; active: boolean; pr
       {active && (
         <span
           className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r"
-          style={{ background: primary, boxShadow: `0 0 12px ${primary}` }}
+          style={{ background: primary }}
         />
       )}
       <Icon className="size-[18px] shrink-0" style={active ? { color: primary } : undefined} />
@@ -283,13 +275,13 @@ function WhatsappStatusPill() {
   const connected = status === "connected";
   const connecting = status === "connecting";
   const label = connected ? "WhatsApp conectado" : connecting ? "Conectando…" : "WhatsApp desconectado";
-  const color = connected ? "#16a34a" : connecting ? "#f59e0b" : "#dc2626";
+  const color = connected ? "var(--success)" : connecting ? "var(--warning)" : "var(--destructive)";
   return (
     <div
       className="flex items-center gap-2 text-[13.5px] font-medium px-3 py-1.5 rounded-full bg-[color:var(--panel)] border border-[color:var(--hairline)]"
       style={{ color }}
     >
-      <span className="size-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 10px ${color}` }} />
+      <span className="size-1.5 rounded-full" style={{ background: color }} />
       {label}
     </div>
   );
