@@ -9,7 +9,7 @@ import {
 } from "./whatsapp-media";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MEDIA_MODEL = "google/gemini-2.5-flash";
+const MEDIA_MODEL = "google/gemini-3.8-flash";
 const DOWNLOAD_TIMEOUT_MS = 15_000;
 const ANALYSIS_TIMEOUT_MS = 30_000;
 

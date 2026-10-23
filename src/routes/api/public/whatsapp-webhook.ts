@@ -32,13 +32,16 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           const number = remoteJid.split("@")[0];
           const pushName: string | undefined = data?.pushName;
           const msg = data?.message ?? {};
-          const text: string =
+          let text: string =
             msg.conversation ||
             msg.extendedTextMessage?.text ||
             msg.imageMessage?.caption ||
             msg.videoMessage?.caption ||
             "";
-          if (!text || !text.trim()) return new Response("no text", { status: 200 });
+          const { detectMedia, crmTextFor, aiUserTextFor } = await import("@/lib/whatsapp-media");
+          const media = detectMedia(msg);
+          let aiUserText: string | null = null;
+          if ((!text || !text.trim()) && !media) return new Response("no text", { status: 200 });
 
           const suppliedToken = new URL(request.url).searchParams.get("t") || request.headers.get("x-webhook-token") || "";
           const { data: inst } = await (supabaseAdmin as any)
@@ -61,6 +64,14 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
               .eq("whatsapp_message_id", whatsappMessageId)
               .maybeSingle();
             if (duplicate) return new Response("duplicate", { status: 200 });
+          }
+
+          // Mídia: baixa (uma por mensagem) e analisa; CRM recebe só texto útil/rótulo.
+          if (media) {
+            const { analyzeWhatsappMedia } = await import("@/lib/whatsapp-media.server");
+            const analysis = await analyzeWhatsappMedia(instanceName, data, media);
+            text = crmTextFor(media, analysis);
+            aiUserText = aiUserTextFor(media, analysis);
           }
 
           const insertedAt = new Date().toISOString();
