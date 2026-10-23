@@ -26,7 +26,30 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           const whatsappMessageId: string | null = typeof key.id === "string" && key.id.trim() ? key.id.trim() : null;
           const remoteJid: string = key.remoteJid || "";
           if (!remoteJid) return new Response("no jid", { status: 200 });
-          if (remoteJid.endsWith("@g.us")) return new Response("group", { status: 200 });
+          const isGroup = remoteJid.endsWith("@g.us");
+          const suppliedToken = new URL(request.url).searchParams.get("t") || request.headers.get("x-webhook-token") || "";
+          const { data: inst, error: instanceError } = await (supabaseAdmin as any)
+            .from("whatsapp_instances")
+            .select("company_id, user_id, instance_name, webhook_token")
+            .eq("instance_name", instanceName)
+            .maybeSingle();
+          if (instanceError || !inst) return new Response("unknown instance", { status: 200 });
+          if (!suppliedToken || suppliedToken !== (inst as any).webhook_token) {
+            return new Response("invalid webhook", { status: 401 });
+          }
+          const companyId = (inst as any).company_id as string;
+          const userId = (inst as any).user_id as string;
+          if (isGroup) {
+            if (fromMe) return new Response("group", { status: 200 });
+            const { groupSupplierSenderPhone } = await import("@/lib/suppliers");
+            const senderPhone = groupSupplierSenderPhone(data);
+            if (!senderPhone) return new Response("group", { status: 200 });
+            const { findActiveSupplier, recordSupplierUpdate } = await import("@/lib/supplier-catalog.server");
+            const supplier = await findActiveSupplier(supabaseAdmin, companyId, senderPhone);
+            if (!supplier) return new Response("group", { status: 200 });
+            const r = await recordSupplierUpdate(supabaseAdmin, supplier, data?.message ?? {}, whatsappMessageId);
+            return new Response(r.duplicate ? "supplier-duplicate" : "supplier-update", { status: 200 });
+          }
           if (fromMe) return new Response("fromMe", { status: 200 });
 
           const number = remoteJid.split("@")[0];
@@ -44,20 +67,6 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           // Mensagens sem texto/mídia suportada só seguem se forem de fornecedor (ex.: PDF).
           const hasAnyContent = !noClientContent || !!(msg.documentMessage || msg.documentWithCaptionMessage || msg.videoMessage);
           if (!hasAnyContent) return new Response("no text", { status: 200 });
-
-          const suppliedToken = new URL(request.url).searchParams.get("t") || request.headers.get("x-webhook-token") || "";
-          const { data: inst } = await (supabaseAdmin as any)
-            .from("whatsapp_instances")
-            .select("company_id, user_id, instance_name, webhook_token")
-            .eq("instance_name", instanceName)
-            .maybeSingle();
-          if (!inst) return new Response(noClientContent ? "no text" : "unknown instance", { status: 200 });
-          if (!suppliedToken || suppliedToken !== (inst as any).webhook_token) {
-            if (noClientContent) return new Response("no text", { status: 200 });
-            return new Response("invalid webhook", { status: 401 });
-          }
-          const companyId = (inst as any).company_id as string;
-          const userId = (inst as any).user_id as string;
 
           // Fornecedor DAQUELA empresa: registra atualização de catálogo e nunca responde automaticamente.
           {
