@@ -11,6 +11,7 @@ export async function handleSupabaseProxy(request: Request): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12_000);
   const onAbort = () => controller.abort();
+  const cleanup = () => { clearTimeout(timer); request.signal.removeEventListener('abort', onAbort); };
   request.signal.addEventListener('abort', onAbort, { once: true });
   try {
     const headers = proxyHeaders(request.headers);
@@ -21,13 +22,14 @@ export async function handleSupabaseProxy(request: Request): Promise<Response> {
     if (request.method !== 'GET' && request.body) { init.body = request.body; init.duplex = 'half'; }
     const result = await fetch(target, init);
     if (result.status >= 300 && result.status < 400) {
+      cleanup();
+      await result.body?.cancel();
       return Response.json({ error: 'Redirecionamento de conexão não permitido.' }, { status: 502 });
     }
     // Keep the deadline active through consumption, not just response headers.
     const body = result.body;
-    if (!body) return new Response(null, { status: result.status, headers: proxyHeaders(result.headers, true) });
+    if (!body) { cleanup(); return new Response(null, { status: result.status, headers: proxyHeaders(result.headers, true) }); }
     const reader = body.getReader();
-    const cleanup = () => { clearTimeout(timer); request.signal.removeEventListener('abort', onAbort); };
     const stream = new ReadableStream<Uint8Array>({
       async pull(out) {
         try {
@@ -40,8 +42,7 @@ export async function handleSupabaseProxy(request: Request): Promise<Response> {
     });
     return new Response(stream, { status: result.status, headers: proxyHeaders(result.headers, true) });
   } catch {
-    clearTimeout(timer);
-    request.signal.removeEventListener('abort', onAbort);
+    cleanup();
     return Response.json({ error: 'Não foi possível conectar ao serviço. Tente novamente.' }, { status: controller.signal.aborted ? 504 : 502, headers: { 'Cache-Control': 'no-store' } });
   }
 }
