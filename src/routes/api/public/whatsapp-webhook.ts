@@ -40,7 +40,10 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             "";
           const { detectMedia, crmTextFor, aiUserTextFor, shouldAnalyzeMedia } = await import("@/lib/whatsapp-media");
           const media = detectMedia(msg);
-          if ((!text || !text.trim()) && !media) return new Response("no text", { status: 200 });
+          const noClientContent = (!text || !text.trim()) && !media;
+          // Mensagens sem texto/mídia suportada só seguem se forem de fornecedor (ex.: PDF).
+          const hasAnyContent = !noClientContent || !!(msg.documentMessage || msg.documentWithCaptionMessage || msg.videoMessage);
+          if (!hasAnyContent) return new Response("no text", { status: 200 });
 
           const suppliedToken = new URL(request.url).searchParams.get("t") || request.headers.get("x-webhook-token") || "";
           const { data: inst } = await (supabaseAdmin as any)
@@ -48,12 +51,24 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             .select("company_id, user_id, instance_name, webhook_token")
             .eq("instance_name", instanceName)
             .maybeSingle();
-          if (!inst) return new Response("unknown instance", { status: 200 });
+          if (!inst) return new Response(noClientContent ? "no text" : "unknown instance", { status: 200 });
           if (!suppliedToken || suppliedToken !== (inst as any).webhook_token) {
+            if (noClientContent) return new Response("no text", { status: 200 });
             return new Response("invalid webhook", { status: 401 });
           }
           const companyId = (inst as any).company_id as string;
           const userId = (inst as any).user_id as string;
+
+          // Fornecedor DAQUELA empresa: registra atualização de catálogo e nunca responde automaticamente.
+          {
+            const { findActiveSupplier, recordSupplierUpdate } = await import("@/lib/supplier-catalog.server");
+            const supplier = await findActiveSupplier(supabaseAdmin, companyId, number);
+            if (supplier) {
+              const r = await recordSupplierUpdate(supabaseAdmin, supplier, msg, whatsappMessageId);
+              return new Response(r.duplicate ? "supplier-duplicate" : "supplier-update", { status: 200 });
+            }
+          }
+          if (noClientContent) return new Response("no text", { status: 200 });
 
           if (whatsappMessageId) {
             const { data: duplicate } = await (supabaseAdmin as any)
