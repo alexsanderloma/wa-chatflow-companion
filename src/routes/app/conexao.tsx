@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, Power, QrCode } from "lucide-react";
 import { brand } from "@/config/brand";
-import { connectWhatsapp, checkWhatsappStatus, disconnectWhatsapp } from "@/lib/evolution.functions";
+import { connectWhatsapp, checkWhatsappStatus, disconnectWhatsapp, diagnoseWhatsapp } from "@/lib/evolution.functions";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { PlanUsageBadge } from "@/components/plan-usage-badge";
 
@@ -21,16 +21,19 @@ function ConexaoPage() {
   const connect = useServerFn(connectWhatsapp);
   const check = useServerFn(checkWhatsappStatus);
   const disconnect = useServerFn(disconnectWhatsapp);
+  const diagnose = useServerFn(diagnoseWhatsapp);
   const plan = usePlanFeatures();
 
   const [loading, setLoading] = useState(false);
   const [qr, setQr] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("disconnected");
   const [numero, setNumero] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [diag, setDiag] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    void doCheck();
+    void doCheck(true);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
@@ -48,25 +51,32 @@ function ConexaoPage() {
       const r: any = await check();
       setStatus(r.status);
       setNumero(r.numero ?? null);
-      if (r.qrBase64 && r.status !== "connected") {
-        setQr(r.qrBase64);
-        if (!pollRef.current) startPolling();
-      }
-      if (r.status === "connected") { setQr(null); stopPolling(); if (!silent) toast.success("WhatsApp conectado!"); }
+      if (r.status === "connected") { setQr(null); setProblem(null); stopPolling(); if (!silent) toast.success("WhatsApp conectado!"); }
     } catch (e: any) { if (!silent) toast.error(e?.message || "Erro ao consultar status"); }
   }
 
   async function doConnect() {
-    setLoading(true); setQr(null);
+    setLoading(true); setQr(null); setProblem(null); setDiag(null);
     try {
       const r = await connect();
-      setQr(r.qrBase64 ?? null);
-      setStatus(r.state === "open" ? "connected" : "connecting");
-      if (r.state === "open") toast.success("Já está conectado!");
-      else if (r.qrBase64) { toast.message("QR Code gerado. Escaneie no WhatsApp."); startPolling(); }
-      else { toast.message("Instância criada. Buscando QR…"); startPolling(); }
-    } catch (e: any) { toast.error(e?.message || "Falha ao conectar"); }
+      if (r.diagnostic === "conectada") {
+        setStatus("connected"); stopPolling(); toast.success("Já está conectado!");
+      } else if (r.qrBase64) {
+        setQr(r.qrBase64); setStatus("connecting"); startPolling();
+        toast.message("QR Code gerado. Escaneie no WhatsApp.");
+      } else {
+        setProblem(r.message); toast.error(r.message);
+      }
+    } catch (e: any) {
+      const msg = e?.message || "Falha ao conectar. Tente novamente.";
+      setProblem(msg); toast.error(msg);
+    }
     finally { setLoading(false); }
+  }
+
+  async function doDiagnose() {
+    try { const r = await diagnose(); setDiag(r.message); }
+    catch (e: any) { setDiag(e?.message || "Não foi possível executar o diagnóstico."); }
   }
 
   async function doDisconnect() {
@@ -141,6 +151,15 @@ function ConexaoPage() {
           </div>
         ) : status === "connected" ? (
           <div className="text-sm text-muted-foreground">Tudo certo! As mensagens serão respondidas automaticamente.</div>
+        ) : problem ? (
+          <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm space-y-3">
+            <p>{problem}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={doConnect} disabled={loading}><RefreshCw className="size-4 mr-1.5" />Tentar novamente</Button>
+              <Button size="sm" variant="outline" onClick={doDiagnose}>Diagnosticar</Button>
+            </div>
+            {diag && <p className="text-muted-foreground">{diag}</p>}
+          </div>
         ) : (
           <div className="text-sm text-muted-foreground">Clique em <b>Conectar WhatsApp</b> para gerar o QR Code.</div>
         )}

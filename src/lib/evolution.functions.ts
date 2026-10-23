@@ -31,89 +31,127 @@ async function resolveCompanyId(supabase: any, userId: string): Promise<string> 
   return data.company_id as string;
 }
 
+type ConnectResult = {
+  instanceName: string;
+  qrBase64: string | null;
+  code: string | null;
+  pairingCode: string | null;
+  state: string | null;
+  diagnostic: import("./evolution-flow").DiagnosticCode;
+  message: string;
+};
+
 export const connectWhatsapp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<ConnectResult> => {
     const { supabase, userId } = context;
     const companyId = await resolveCompanyId(supabase, userId);
-    const {
-      evoCreateInstance,
-      evoGetQr,
-      evoSetWebhook,
-      evoState,
-    } = await import("./evolution.server");
+    const { evoCreateInstance, evoGetQr, evoSetWebhook, evoState, evoRestart, qrFromPayload } = await import("./evolution.server");
+    const { EvolutionError, decideConnectAction, diagnosticFromError, isAlreadyExistsMessage, parseEvoState, DIAGNOSTIC_MESSAGES } = await import("./evolution-flow");
 
-    const { data: existing } = await (supabase as any)
+    const { data: existing, error: selErr } = await (supabase as any)
       .from("whatsapp_instances")
       .select("instance_name,status,numero,webhook_token")
       .eq("company_id", companyId)
       .maybeSingle();
-    const instanceName = existing?.instance_name || deriveInstanceName(companyId);
-    const webhookToken = existing?.webhook_token || crypto.randomUUID();
+    if (selErr) throw new Error("Não foi possível ler a conexão atual. Tente novamente.");
+    const instanceName: string = existing?.instance_name || deriveInstanceName(companyId);
+    const webhookToken: string = existing?.webhook_token || crypto.randomUUID();
     const webhookUrl = buildWebhookUrl(webhookToken);
-    if (existing?.instance_name) {
-      try {
-        const s = await evoState(existing.instance_name);
-        const existingState = s?.instance?.state || (s as any)?.state;
-        if (existingState === "open") {
-          if (webhookUrl) {
-            try { await evoSetWebhook(existing.instance_name, webhookUrl); } catch (e) { console.warn("[evolution.setWebhook]", e); }
-          }
-          if (existing.status !== "connected") {
-            await supabase
-              .from("whatsapp_instances")
-              .update({ status: "connected", webhook_token: webhookToken, webhook_configured_at: new Date().toISOString() } as any)
-              .eq("company_id", companyId);
-          }
-          return { instanceName: existing.instance_name, qrBase64: null, code: null, state: "open", webhookUrl };
-        }
-      } catch {}
+    const fail = (diagnostic: ConnectResult["diagnostic"], state: string | null = null): ConnectResult =>
+      ({ instanceName, qrBase64: null, code: null, pairingCode: null, state, diagnostic, message: DIAGNOSTIC_MESSAGES[diagnostic] });
+
+    // 1) Consulta o estado antes de qualquer criação.
+    let current: "open" | "connecting" | "close" | null | "missing";
+    try {
+      current = parseEvoState(await evoState(instanceName));
+    } catch (e) {
+      if (e instanceof EvolutionError && e.code === "instancia_ausente") current = "missing";
+      else { console.warn("[evolution.state]", (e as Error)?.message); return fail(diagnosticFromError(e)); }
     }
 
-    await supabase
-      .from("whatsapp_instances")
-      .upsert(
-        { company_id: companyId, user_id: userId, instance_name: instanceName, status: "connecting", webhook_token: webhookToken } as any,
+    const action = decideConnectAction(current);
+    if (action === "already_open") {
+      let webhookOk = false;
+      if (webhookUrl) {
+        try { await evoSetWebhook(instanceName, webhookUrl); webhookOk = true; } catch (e) { console.warn("[evolution.setWebhook]", (e as Error)?.message); }
+      }
+      await supabase.from("whatsapp_instances").upsert(
+        { company_id: companyId, user_id: userId, instance_name: instanceName, status: "connected", webhook_token: webhookToken,
+          ...(webhookOk ? { webhook_configured_at: new Date().toISOString() } : {}) } as any,
         { onConflict: "company_id" },
       );
-
-    try {
-      await evoCreateInstance(instanceName, webhookUrl);
-    } catch (e: any) {
-      const msg = String(e?.message || "");
-      if (!/exists|already/i.test(msg)) console.warn("[evolution.create]", msg);
-      if (!/exists|already/i.test(msg)) throw e;
+      return { ...fail("conectada", "open") };
     }
+
+    let qr: { qrBase64: string | null; code: string | null; pairingCode: string | null } = { qrBase64: null, code: null, pairingCode: null };
+    if (action === "create") {
+      try {
+        const created: any = await evoCreateInstance(instanceName, webhookUrl || undefined);
+        qr = await qrFromPayload(created?.qrcode ?? created);
+      } catch (e: any) {
+        if (!isAlreadyExistsMessage(String(e?.message || ""))) {
+          console.warn("[evolution.create]", e?.message);
+          return fail(diagnosticFromError(e));
+        }
+      }
+    }
+
+    // Registra a linha como "connecting" só depois que a instância existe.
+    const { error: upErr } = await supabase.from("whatsapp_instances").upsert(
+      { company_id: companyId, user_id: userId, instance_name: instanceName, status: "connecting", webhook_token: webhookToken, webhook_configured_at: null } as any,
+      { onConflict: "company_id" },
+    );
+    if (upErr) throw new Error("Não foi possível salvar a conexão. Tente novamente.");
 
     if (webhookUrl) {
-      try { await evoSetWebhook(instanceName, webhookUrl); } catch (e) { console.warn("[evolution.setWebhook]", e); }
+      try { await evoSetWebhook(instanceName, webhookUrl); } catch (e) { console.warn("[evolution.setWebhook]", (e as Error)?.message); }
     }
 
-    let qrBase64: string | null = null;
-    let code: string | null = null;
-    let lastQrError: unknown = null;
-    for (let i = 0; i < 6; i++) {
+    // 2) connect para obter QR (somente aqui, nunca no polling).
+    let lastErr: unknown = null;
+    for (let i = 0; i < 4 && !qr.qrBase64; i++) {
       try {
-        const qr = await evoGetQr(instanceName);
-        qrBase64 = qr.qrBase64;
-        code = qr.code;
-        if (qrBase64 || code) break;
-      } catch (e) { lastQrError = e; console.warn("[evolution.connect]", e); }
-      await new Promise((r) => setTimeout(r, 800));
+        qr = await evoGetQr(instanceName);
+        if (qr.qrBase64) break;
+        if (i === 1) {
+          // Instância desconectada travada sem QR: reinicia (não apaga dados).
+          try { await evoRestart(instanceName); } catch (e) { console.warn("[evolution.restart]", (e as Error)?.message); }
+        }
+      } catch (e) { lastErr = e; console.warn("[evolution.connect]", (e as Error)?.message); }
+      await new Promise((r) => setTimeout(r, 1000));
     }
 
-    if (!qrBase64 && !code && lastQrError) {
-      throw lastQrError;
-    }
-
-    let state: string | undefined;
-    try {
-      const s = await evoState(instanceName);
-      state = s?.instance?.state || (s as any)?.state;
-    } catch {}
-
-    return { instanceName, qrBase64, code, state, webhookUrl };
+    let state: string | null = null;
+    try { state = parseEvoState(await evoState(instanceName)); } catch {}
+    if (state === "open") return fail("conectada", "open");
+    if (!qr.qrBase64) return fail(lastErr ? diagnosticFromError(lastErr) : "qr_indisponivel", state);
+    return { instanceName, ...qr, state, diagnostic: "conectando", message: DIAGNOSTIC_MESSAGES.conectando };
   });
+
+export const diagnoseWhatsapp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: m, error } = await supabase
+      .from("company_user").select("company_id,role").eq("user_id", userId).eq("ativo", true)
+      .order("created_at", { ascending: true }).limit(1).maybeSingle();
+    if (error || !m) throw new Error("Empresa não encontrada.");
+    if ((m as any).role !== "owner") throw new Error("Apenas o dono da empresa pode executar o diagnóstico.");
+    const { evoState } = await import("./evolution.server");
+    const { EvolutionError, diagnosticFromError, parseEvoState, DIAGNOSTIC_MESSAGES } = await import("./evolution-flow");
+    const { data: row } = await (supabase as any).from("whatsapp_instances").select("instance_name").eq("company_id", (m as any).company_id).maybeSingle();
+    const name = row?.instance_name || deriveInstanceName((m as any).company_id);
+    let code: import("./evolution-flow").DiagnosticCode;
+    try {
+      const s = parseEvoState(await evoState(name));
+      code = s === "open" ? "conectada" : s === "connecting" ? "conectando" : "desconectada";
+    } catch (e) {
+      code = e instanceof EvolutionError && e.code === "instancia_ausente" ? "instancia_ausente" : diagnosticFromError(e);
+    }
+    return { code, message: DIAGNOSTIC_MESSAGES[code] };
+  });
+
 
 export const checkWhatsappStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -133,7 +171,8 @@ export const checkWhatsappStatus = createServerFn({ method: "POST" })
     let stateError = false;
     try {
       const s = await evoState(row.instance_name);
-      state = s?.instance?.state || (s as any)?.state || null;
+      const { parseEvoState } = await import("./evolution-flow");
+      state = parseEvoState(s);
     } catch (e) {
       stateError = true;
       console.warn("[evolution.state]", e);
