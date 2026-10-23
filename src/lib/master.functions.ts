@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { slugify } from "@/lib/tenant";
+import { OPERATIONAL_SUBSCRIPTION_STATUSES, validateMasterPlanInput } from "@/lib/master-plan";
 
 async function assertSuper(supabase: any, userId: string) {
   const { data, error } = await supabase
@@ -64,7 +65,11 @@ export const listMasterSubscriptions = createServerFn({ method: "POST" })
       .select("*, plan:plan(nome,preco_cents,moeda,intervalo), company:company(nome,status_cobranca,email_corporativo)")
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return { rows: data ?? [] };
+    const { data: history, error: historyError } = await supabaseAdmin.from("audit_log")
+      .select("id,company_id,acao,detalhes,created_at,user_id,company:company(nome)")
+      .in("acao", ["master_plan_assign", "master_plan_cancel"]).order("created_at", { ascending: false });
+    if (historyError) throw new Error("Não foi possível carregar o histórico de planos");
+    return { rows: data ?? [], history: history ?? [] };
   });
 
 export const listCompanies = createServerFn({ method: "POST" })
@@ -98,7 +103,12 @@ export const listCompanies = createServerFn({ method: "POST" })
         if (!ultByCompany[(m as any).company_id]) ultByCompany[(m as any).company_id] = (m as any).created_at;
       }
     }
-    const list = (rows ?? []).map((c: any) => ({ ...c, ultima_atividade: ultByCompany[c.id] ?? null }));
+    const { data: subscriptions, error: subscriptionsError } = ids.length ? await supabaseAdmin
+      .from("subscription").select("company_id,status,plan_id,plan:plan(nome)")
+      .in("company_id", ids).in("status", [...OPERATIONAL_SUBSCRIPTION_STATUSES]) : { data: [], error: null };
+    if (subscriptionsError) throw new Error("Não foi possível carregar os planos das empresas");
+    const list = (rows ?? []).map((c: any) => ({ ...c, ultima_atividade: ultByCompany[c.id] ?? null,
+      current_subscription: subscriptions?.find((s) => s.company_id === c.id) ?? null }));
     return { rows: list, total: count ?? 0, pageSize };
   });
 
@@ -216,11 +226,12 @@ export const listPlansBasic = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertSuper(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from("plan")
       .select("id, slug, nome, preco_cents, moeda, intervalo, trial_days")
       .eq("ativo", true)
       .order("preco_cents", { ascending: true });
+    if (error) throw new Error("Não foi possível carregar os planos ativos");
     return { plans: data ?? [] };
   });
 
@@ -346,11 +357,13 @@ export const getCompanyDetails = createServerFn({ method: "POST" })
       profile: profilesById[m.user_id] ?? null,
     }));
 
-    const { data: subscription } = await supabaseAdmin
+    const { data: subscription, error: subscriptionError } = await supabaseAdmin
       .from("subscription")
       .select("*, plan:plan(nome, preco_cents, moeda, intervalo)")
       .eq("company_id", data.companyId)
+      .in("status", [...OPERATIONAL_SUBSCRIPTION_STATUSES])
       .maybeSingle();
+    if (subscriptionError) throw new Error("Não foi possível carregar o plano atual");
 
     const [{ count: msgCount }, { count: contactsCount }, { count: cardsCount }] = await Promise.all([
       supabaseAdmin.from("mensagens").select("id", { count: "exact", head: true }).eq("company_id", data.companyId),
@@ -368,4 +381,37 @@ export const getCompanyDetails = createServerFn({ method: "POST" })
         cards: cardsCount ?? 0,
       },
     };
+  });
+
+export const getCompanyPlanManagement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { companyId: string }) => validateMasterPlanInput({ ...input, action: "cancel" }))
+  .handler(async ({ context, data }) => {
+    await assertSuper(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [company, subscriptions, plans, history] = await Promise.all([
+      supabaseAdmin.from("company").select("id,nome,status_cobranca,trial_ate").eq("id", data.companyId).maybeSingle(),
+      supabaseAdmin.from("subscription").select("*,plan:plan(nome)").eq("company_id", data.companyId).order("created_at", { ascending: false }),
+      supabaseAdmin.from("plan").select("id,nome,preco_cents,moeda").eq("ativo", true).order("ordem"),
+      supabaseAdmin.from("audit_log").select("id,acao,detalhes,created_at,user_id").eq("company_id", data.companyId)
+        .in("acao", ["master_plan_assign", "master_plan_cancel"]).order("created_at", { ascending: false }),
+    ]);
+    if ([company, subscriptions, plans, history].some((result) => result.error)) throw new Error("Não foi possível carregar a gestão do plano");
+    if (!company.data) throw new Error("Empresa não encontrada");
+    return { company: company.data, subscriptions: subscriptions.data ?? [], plans: plans.data ?? [], history: history.data ?? [] };
+  });
+
+export const manageCompanyPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(validateMasterPlanInput)
+  .handler(async ({ context, data }) => {
+    await assertSuper(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Database locks + audit in one transaction; no external billing request.
+    const { data: result, error } = await supabaseAdmin.rpc("master_manage_company_plan", {
+      _actor_id: context.userId, _company_id: data.companyId, _plan_id: data.planId ?? "00000000-0000-0000-0000-000000000000", _action: data.action,
+    });
+    if (error) throw new Error("Não foi possível alterar o plano. Confira a empresa e selecione um plano ativo.");
+    if (!result || typeof result !== "object" || Array.isArray(result) || result.ok !== true) throw new Error("A alteração do plano não foi confirmada");
+    return { ok: true, changed: result.changed === true };
   });
