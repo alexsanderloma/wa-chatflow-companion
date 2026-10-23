@@ -20,6 +20,7 @@ import {
 import { BrandTerrain } from "@/components/brand-terrain";
 import { BrandMark } from "@/components/brand-mark";
 import { brand } from "@/config/brand";
+import { resolveAuthMode, validateSignup, PASSWORD_MIN, type AuthMode } from "@/lib/auth-mode";
 
 type Search = { modo?: "login" | "signup"; plano?: string };
 
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/entrar")({
     { name: "twitter:card", content: "summary" },
   ] }),
   validateSearch: (s: Record<string, unknown>): Search => ({
-    modo: s.modo === "login" ? "login" : "signup",
+    modo: resolveAuthMode(s.modo),
     plano: typeof s.plano === "string" ? s.plano : undefined,
   }),
   beforeLoad: async ({ search }) => {
@@ -55,18 +56,19 @@ const PLAN_LABEL: Record<string, { nome: string; preco: string }> = {
 
 const emailSchema = z.string().email("E-mail inválido");
 
-function genStrongPassword() {
-  const arr = new Uint8Array(24);
-  crypto.getRandomValues(arr);
-  return "Az9!" + btoa(String.fromCharCode(...arr)).replace(/[+/=]/g, "x").slice(0, 28);
-}
-
 function EntrarPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/entrar" }) as Search;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [needsPassword, setNeedsPassword] = useState(search.modo === "login");
+  const [confirm, setConfirm] = useState("");
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const mode: AuthMode = resolveAuthMode(search.modo);
+  const needsPassword = mode === "login";
+  function switchMode(m: AuthMode) {
+    setPassword(""); setConfirm(""); setSentTo(null);
+    navigate({ to: "/entrar", search: { modo: m, plano: search.plano } as any, replace: true });
+  }
   const [loading, setLoading] = useState(false);
 
   const planInfo = search.plano ? PLAN_LABEL[search.plano] : null;
@@ -96,50 +98,45 @@ function EntrarPage() {
     if (needsPassword) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
-      if (error) return toast.error("Senha incorreta. Tente novamente ou recupere sua senha.");
+      if (error) {
+        const m = (error.message || "").toLowerCase();
+        if (m.includes("confirm")) return toast.error("Confirme seu e-mail pelo link que enviamos antes de entrar.");
+        return toast.error("E-mail ou senha incorretos. Tente novamente ou recupere sua senha.");
+      }
       toast.success("Bem-vindo de volta!");
       return routeAfterAuth();
     }
 
-    const generated = genStrongPassword();
+    const invalid = validateSignup(email, password, confirm);
+    if (invalid) { setLoading(false); return toast.error(invalid); }
     const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-      email,
-      password: generated,
-      options: { emailRedirectTo: window.location.origin + (search.plano ? `/app/checkout?plano=${search.plano}` : "/app/dashboard") },
+      email: email.trim(),
+      password,
+      options: { emailRedirectTo: window.location.origin + (search.plano ? `/app/checkout?plano=${encodeURIComponent(search.plano)}` : "/app/checkout") },
     });
-
+    setLoading(false);
     if (signUpErr) {
       const msg = (signUpErr.message || "").toLowerCase();
       if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
-        setNeedsPassword(true);
-        setLoading(false);
-        toast.message("Já existe uma conta com esse e-mail.", { description: "Digite sua senha para continuar." });
+        toast.message("Não foi possível criar a conta com este e-mail.", { description: "Se você já tem conta, entre ou recupere sua senha." });
         return;
       }
-      if (msg.includes("signups not allowed") || msg.includes("signup_disabled") || msg.includes("signup is disabled")) {
-        setNeedsPassword(true);
-        setLoading(false);
-        toast.message("Cadastros novos estão desativados.", { description: "Se você já tem conta, digite sua senha para entrar." });
+      if (msg.includes("signup") && (msg.includes("disabled") || msg.includes("not allowed"))) {
+        toast.error("Cadastros novos estão desativados no momento.");
         return;
       }
-      setLoading(false);
-      return toast.error(signUpErr.message);
+      if (msg.includes("weak") || msg.includes("pwned") || msg.includes("password")) {
+        toast.error("Senha recusada. Escolha uma senha mais forte e diferente de senhas comuns.");
+        return;
+      }
+      return toast.error("Não foi possível criar a conta. Tente novamente.");
     }
-
     if (signUpData.session) {
-      setLoading(false);
-      toast.success("Conta criada! Vamos para o pagamento.");
+      toast.success("Conta criada!");
       return routeAfterAuth();
     }
-
-    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password: generated });
-    setLoading(false);
-    if (signInErr) {
-      toast.success("Enviamos um link de confirmação para o seu e-mail.");
-      return;
-    }
-    toast.success("Conta criada!");
-    routeAfterAuth();
+    // Sem sessão: confirmação por e-mail pendente (ou e-mail já cadastrado — resposta neutra).
+    setSentTo(email.trim());
   }
 
   return (
@@ -225,12 +222,12 @@ function EntrarPage() {
                 </div>
 
                 <h1 className="font-display text-[24px] sm:text-[26px] font-medium leading-tight ">
-                  {needsPassword ? "Entrar na sua conta" : "Comece em 1 clique"}
+                  {needsPassword ? "Entrar na sua conta" : "Criar sua conta"}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1.5 mb-6">
                   {needsPassword
-                    ? "Você já tem conta — informe sua senha pra continuar."
-                    : "Só precisamos do seu e-mail. Criamos a conta na hora e te levamos pro próximo passo."}
+                    ? "Informe seu e-mail e senha para continuar."
+                    : "Cadastre seu e-mail e escolha uma senha. Depois você escolhe o plano."}
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -240,7 +237,7 @@ function EntrarPage() {
                       id="email"
                       type="email"
                       value={email}
-                      onChange={(e) => { setEmail(e.target.value); if (needsPassword) setNeedsPassword(false); }}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                       autoFocus
                       placeholder="voce@empresa.com"
@@ -248,15 +245,23 @@ function EntrarPage() {
                     />
                   </div>
 
-                  {needsPassword && (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="pwd">Senha</Label>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="pwd">Senha</Label>
+                      {needsPassword && (
                         <Link to="/esqueci-senha" className="text-[11.5px] font-medium text-muted-foreground hover:text-[color:var(--brand-text)] transition-colors">
                           Esqueci minha senha
                         </Link>
-                      </div>
-                      <Input id="pwd" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus required className="h-11" />
+                      )}
+                    </div>
+                    <Input id="pwd" type="password" autoComplete={needsPassword ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} required className="h-11" />
+                    {!needsPassword && <p className="text-[11.5px] text-muted-foreground">Mínimo de {PASSWORD_MIN} caracteres, com letras e números.</p>}
+                  </div>
+
+                  {!needsPassword && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pwd2">Confirmar senha</Label>
+                      <Input id="pwd2" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required className="h-11" />
                     </div>
                   )}
 
@@ -267,7 +272,7 @@ function EntrarPage() {
                     className="w-full h-12 bg-gradient-brand text-primary-foreground hover:opacity-95 font-semibold text-[14.5px] "
                   >
                     {loading && <Loader2 className="size-4 mr-2 animate-spin" />}
-                    {needsPassword ? "Entrar e continuar" : planInfo ? "Continuar para o pagamento" : "Criar conta grátis"}
+                    {needsPassword ? "Entrar" : "Criar conta"}
                   </Button>
 
                   {!needsPassword && (
@@ -275,7 +280,19 @@ function EntrarPage() {
                       Sem cartão para começar os <span className="font-semibold text-foreground">3 dias grátis</span>. Cancele quando quiser.
                     </p>
                   )}
+                  <p className="text-[13px] text-muted-foreground text-center">
+                    {needsPassword ? "Ainda não tem conta? " : "Já tem conta? "}
+                    <button type="button" onClick={() => switchMode(needsPassword ? "signup" : "login")} className="font-semibold text-[color:var(--brand-text)] underline-offset-2 hover:underline">
+                      {needsPassword ? "Criar conta" : "Entrar"}
+                    </button>
+                  </p>
                 </form>
+                {sentTo && (
+                  <div role="status" className="mt-5 rounded-lg border border-border p-4 text-sm">
+                    <div className="font-semibold">Verifique seu e-mail</div>
+                    <p className="text-muted-foreground mt-1">Se {sentTo} puder ser cadastrado, enviamos um link de confirmação. Depois de confirmar, você segue para {planInfo ? "o pagamento do plano escolhido" : "a escolha do plano"}. Já tem conta? Entre com sua senha.</p>
+                  </div>
+                )}
               </div>
             </div>
 
