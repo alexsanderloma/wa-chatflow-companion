@@ -1,5 +1,7 @@
 # AGENTS.md
 
+- Master plan mutations use a service-role-only RPC after assertSuper; lock the company and atomically preserve canceled subscription history, update entitlement and write existing audit_log, without calling external billing providers.
+
 - Application Supabase imports resolve through the hand-maintained connectivity wrapper, not edits to generated integrations; only live browser hosts use the allowlisted same-origin HTTP proxy, with the original session key and independent direct Realtime, so regeneration, preview authentication and RLS remain intact.
 
 - Human escalation uses a structured AI marker or an unmarked-promise safety fallback, both sharing an atomic durable claim-and-pause RPC and a single Evolution send by the claim winner; customer acknowledgements require both delivery acknowledgement and persisted success, so concurrent deliveries and failed alerts cannot create false transfer promises.
