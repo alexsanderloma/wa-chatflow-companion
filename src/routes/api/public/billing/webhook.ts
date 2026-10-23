@@ -1,13 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { normalize, type NormalizedBillingEvent } from "@/lib/billing/normalize";
+import { normalize, type NormalizedBillingEvent, type BillingProvider } from "@/lib/billing/normalize";
+import { extractWebhookToken, isAlreadyProcessed, isValidWebhookToken } from "@/lib/billing/auth";
 
-type Provider = "kiwify" | "cakto" | "perfectpay";
+type Provider = BillingProvider;
+const PROVIDERS: Provider[] = ["kiwify", "cakto", "perfectpay", "asaas"];
 
 function tokenEnv(provider: Provider): string {
   return provider === "kiwify"
     ? "KIWIFY_WEBHOOK_TOKEN"
     : provider === "cakto"
     ? "CAKTO_WEBHOOK_TOKEN"
+    : provider === "asaas"
+    ? "ASAAS_WEBHOOK_TOKEN"
     : "PERFECTPAY_WEBHOOK_TOKEN";
 }
 
@@ -190,13 +194,13 @@ export const Route = createFileRoute("/api/public/billing/webhook")({
       POST: async ({ request }) => {
         const url = new URL(request.url);
         const provider = (url.searchParams.get("provider") || "") as Provider;
-        const token = url.searchParams.get("token") || request.headers.get("x-webhook-token") || "";
 
-        if (!["kiwify", "cakto", "perfectpay"].includes(provider)) {
+        if (!PROVIDERS.includes(provider)) {
           return new Response("provider inválido", { status: 400 });
         }
+        const token = extractWebhookToken(provider, url, request.headers);
         const expected = process.env[tokenEnv(provider)];
-        if (!expected || token !== expected) {
+        if (!isValidWebhookToken(token, expected)) {
           return new Response("token inválido", { status: 401 });
         }
 
@@ -215,6 +219,19 @@ export const Route = createFileRoute("/api/public/billing/webhook")({
 
         try {
           const evt = normalize(provider, body);
+          // Asaas entrega ao menos uma vez: se o evento já foi aplicado, não reaplica.
+          if (provider === "asaas" && evt.eventId) {
+            const admin = await getAdmin();
+            const { data: seen, error: seenErr } = await admin
+              .from("billing_event_log")
+              .select("processed")
+              .eq("provider", "asaas")
+              .eq("payload->>eventId", evt.eventId)
+              .eq("processed", true)
+              .limit(1);
+            if (seenErr) throw new Error(`idempotency lookup: ${seenErr.message}`);
+            if (isAlreadyProcessed(seen as any)) return Response.json({ ok: true, duplicate: true });
+          }
           await applyEvent(evt);
           return Response.json({ ok: true });
         } catch (e: any) {
