@@ -21,6 +21,7 @@ import { BrandTerrain } from "@/components/brand-terrain";
 import { BrandMark } from "@/components/brand-mark";
 import { brand } from "@/config/brand";
 import { resolveAuthMode, validateSignup, PASSWORD_MIN, type AuthMode } from "@/lib/auth-mode";
+import { withTimeout, AuthTimeoutError, resolvePostAuthDestination } from "@/lib/auth-timeout";
 
 type Search = { modo?: "login" | "signup"; plano?: string };
 
@@ -73,20 +74,20 @@ function EntrarPage() {
 
   const planInfo = search.plano ? PLAN_LABEL[search.plano] : null;
 
-  async function routeAfterAuth() {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    if (search.plano) {
-      navigate({ to: "/app/checkout", search: { plano: search.plano } as any, replace: true });
-      return;
-    }
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
-    if (roles?.some((r) => r.role === "super_admin")) {
-      navigate({ to: "/master/painel", replace: true });
-      return;
-    }
-    const { data: cu } = await supabase.from("company_user").select("company_id").eq("user_id", u.user.id).eq("ativo", true).maybeSingle();
-    navigate({ href: cu ? "/app/dashboard" : "/app/checkout", replace: true });
+  async function routeAfterAuth(userId: string) {
+    const href = await resolvePostAuthDestination(search.plano, {
+      isSuperAdmin: async () => {
+        const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+        if (error) throw error;
+        return !!data?.some((r) => r.role === "super_admin");
+      },
+      hasCompany: async () => {
+        const { data, error } = await supabase.from("company_user").select("company_id").eq("user_id", userId).eq("ativo", true).limit(1);
+        if (error) throw error;
+        return !!data?.length;
+      },
+    });
+    navigate({ href, replace: true });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -94,49 +95,56 @@ function EntrarPage() {
     const v = emailSchema.safeParse(email);
     if (!v.success) return toast.error(v.error.issues[0].message);
     setLoading(true);
+    try {
+      if (needsPassword) {
+        const { data, error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }));
+        if (error) {
+          const m = (error.message || "").toLowerCase();
+          if (m.includes("confirm")) return toast.error("Confirme seu e-mail pelo link que enviamos antes de entrar.");
+          return toast.error("E-mail ou senha incorretos. Tente novamente ou recupere sua senha.");
+        }
+        if (!data.user) return toast.error("Não foi possível confirmar seu login. Tente novamente.");
+        toast.success("Bem-vindo de volta!");
+        await routeAfterAuth(data.user.id);
+        return;
+      }
 
-    if (needsPassword) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const invalid = validateSignup(email, password, confirm);
+      if (invalid) return toast.error(invalid);
+      const { data: signUpData, error: signUpErr } = await withTimeout(supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: window.location.origin + (search.plano ? `/app/checkout?plano=${encodeURIComponent(search.plano)}` : "/app/checkout") },
+      }));
+      if (signUpErr) {
+        const msg = (signUpErr.message || "").toLowerCase();
+        if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
+          toast.message("Não foi possível criar a conta com este e-mail.", { description: "Se você já tem conta, entre ou recupere sua senha." });
+          return;
+        }
+        if (msg.includes("signup") && (msg.includes("disabled") || msg.includes("not allowed"))) {
+          toast.error("Cadastros novos estão desativados no momento.");
+          return;
+        }
+        if (msg.includes("weak") || msg.includes("pwned") || msg.includes("password")) {
+          toast.error("Senha recusada. Escolha uma senha mais forte e diferente de senhas comuns.");
+          return;
+        }
+        return toast.error("Não foi possível criar a conta. Tente novamente.");
+      }
+      if (signUpData.session && signUpData.user) {
+        toast.success("Conta criada!");
+        await routeAfterAuth(signUpData.user.id);
+        return;
+      }
+      // Sem sessão: confirmação por e-mail pendente (ou e-mail já cadastrado — resposta neutra).
+      setSentTo(email.trim());
+    } catch (err) {
+      if (err instanceof AuthTimeoutError) toast.error("A conexão está demorando mais que o normal. Verifique sua internet e tente novamente.");
+      else toast.error("Não foi possível confirmar seu acesso agora. Tente novamente.");
+    } finally {
       setLoading(false);
-      if (error) {
-        const m = (error.message || "").toLowerCase();
-        if (m.includes("confirm")) return toast.error("Confirme seu e-mail pelo link que enviamos antes de entrar.");
-        return toast.error("E-mail ou senha incorretos. Tente novamente ou recupere sua senha.");
-      }
-      toast.success("Bem-vindo de volta!");
-      return routeAfterAuth();
     }
-
-    const invalid = validateSignup(email, password, confirm);
-    if (invalid) { setLoading(false); return toast.error(invalid); }
-    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { emailRedirectTo: window.location.origin + (search.plano ? `/app/checkout?plano=${encodeURIComponent(search.plano)}` : "/app/checkout") },
-    });
-    setLoading(false);
-    if (signUpErr) {
-      const msg = (signUpErr.message || "").toLowerCase();
-      if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
-        toast.message("Não foi possível criar a conta com este e-mail.", { description: "Se você já tem conta, entre ou recupere sua senha." });
-        return;
-      }
-      if (msg.includes("signup") && (msg.includes("disabled") || msg.includes("not allowed"))) {
-        toast.error("Cadastros novos estão desativados no momento.");
-        return;
-      }
-      if (msg.includes("weak") || msg.includes("pwned") || msg.includes("password")) {
-        toast.error("Senha recusada. Escolha uma senha mais forte e diferente de senhas comuns.");
-        return;
-      }
-      return toast.error("Não foi possível criar a conta. Tente novamente.");
-    }
-    if (signUpData.session) {
-      toast.success("Conta criada!");
-      return routeAfterAuth();
-    }
-    // Sem sessão: confirmação por e-mail pendente (ou e-mail já cadastrado — resposta neutra).
-    setSentTo(email.trim());
   }
 
   return (
