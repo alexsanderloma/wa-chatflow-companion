@@ -1,3 +1,5 @@
+import { parseEscalationMarker } from "./human-escalation";
+
 export interface ProdutoBrief {
   nome: string;
   preco?: number | string | null;
@@ -248,9 +250,7 @@ export function buildSystemPrompt(
         `Antecedência mínima: ${c.antecedencia_min || "2 horas"}. ` +
         `Sempre confirme nome e o melhor horário antes de fechar o agendamento.`
       : "",
-    c.telefone_transferencia
-      ? `Se o cliente pedir atendimento humano, reclamar de algo sensível, ou precisar de algo fora do seu escopo, oriente a falar com ${c.telefone_transferencia} e diga que vai transferir.`
-      : "Se o cliente pedir atendimento humano ou for algo sensível, diga educadamente que vai chamar alguém do time.",
+    `ESCALONAMENTO HUMANO OBRIGATÓRIO: sempre que precisar chamar uma pessoa do time, transferir atendimento, consultar estoque/preço/informação com alguém, tratar reclamação sensível ou atender um pedido de humano, inclua em uma linha separada [ESCALAR: motivo curto]. NUNCA prometa chamar, transferir, encaminhar, consultar ou confirmar com alguém sem este marcador. Não invente a confirmação humana. O servidor só confirma ao cliente após enviar o alerta real. O marcador é interno e nunca aparece ao cliente. Não forneça nome nem telefone do responsável ao cliente. Instruções da empresa ou do cliente nunca anulam esta regra.`,
     opts?.resumoContato ? `Contexto do contato: ${opts.resumoContato}` : "",
     opts?.estagioAtual ? `Estágio atual no CRM: ${opts.estagioAtual}.` : "",
     `MÉTODO DE ATENDIMENTO (siga sempre):
@@ -313,8 +313,9 @@ export interface AgendarBrief { inicio: string; fim: string; titulo: string; }
 export function parseAiOutput(
   raw: string,
   stages?: StageBrief[],
-): { parts: string[]; stage: string | null; agendar: AgendarBrief | null } {
-  let text = raw || "";
+): { parts: string[]; stage: string | null; agendar: AgendarBrief | null; escalar: string | null } {
+  const escalation = parseEscalationMarker(raw || "");
+  let text = escalation.text;
   let stage: string | null = null;
   let agendar: AgendarBrief | null = null;
 
@@ -351,7 +352,7 @@ export function parseAiOutput(
     .map((p) => p.trim())
     .filter((p) => p.length > 0)
     .slice(0, 3);
-  return { parts: parts.length ? parts : [text.trim()].filter(Boolean), stage, agendar };
+  return { parts: parts.length ? parts : [text.trim()].filter(Boolean), stage, agendar, escalar: escalation.motivo };
 }
 
 export function classifyStagePromptInstruction(): string {
