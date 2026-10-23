@@ -55,6 +55,18 @@ export function phoneVariants(phone: string): string[] {
 
 export type SupplierLite = { id: string; company_id: string; telefone: string; ativo: boolean };
 
+/** Group identities are never phones. Only explicit participant phone JIDs are trusted.
+ * LID identities need an explicit participantAlt phone; never infer from sender/group IDs.
+ */
+export function groupSupplierSenderPhone(data: any): string | null {
+  for (const value of [data?.key?.participant, data?.key?.participantAlt, data?.participant]) {
+    if (typeof value !== "string") continue;
+    const match = value.match(/^([1-9]\d{9,14})(?::\d+)?@(s\.whatsapp\.net|c\.us)$/);
+    if (match) return normalizeSupplierPhone(match[1]);
+  }
+  return null;
+}
+
 /** Encontra o fornecedor ativo DAQUELA empresa que corresponde ao remetente. */
 export function findSupplierForSender<T extends SupplierLite>(
   suppliers: T[],
