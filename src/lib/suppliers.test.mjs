@@ -30,6 +30,9 @@ test("suggested price uses net margin: total cost / (1 - margin)", () => {
   assert.equal(DEFAULT_MARGINS.android, 30);
   assert.equal(DEFAULT_MARGINS.iphone, 30);
   assert.equal(DEFAULT_MARGINS.tablet, 30);
+  assert.equal(DEFAULT_MARGINS.acessorios, 0);
+  assert.equal(DEFAULT_MARGINS.manutencao, 0);
+  assert.equal(DEFAULT_MARGINS.outros, 0);
   assert.equal(suggestedPriceCents(70000, 0, 30), 100000);
   assert.equal(suggestedPriceCents(65000, 5000, 30), 100000); // frete/taxas compõem o custo
   assert.equal(suggestedPriceCents(1000, 0, 100), null);
