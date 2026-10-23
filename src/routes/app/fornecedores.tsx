@@ -136,7 +136,7 @@ function FornecedoresPage() {
         <h2 className="mb-1 font-medium">Margens por categoria</h2>
         <p className="mb-3 text-xs text-muted-foreground">
           Preço sugerido = custo total ÷ (1 − margem líquida). O custo total soma o custo do fornecedor mais taxas, frete e outros custos informados.
-          Ex.: custo total R$ 700 com margem de 30% → R$ 1.000.
+          Nenhuma margem vem predefinida: defina e salve a margem líquida de cada categoria. Sem margem salva, não há preço sugerido. Ex.: custo total R$ 700 com margem de 30% → R$ 1.000.
         </p>
         <div className="grid gap-3 md:grid-cols-3">
           {data.margins.map((m) => (

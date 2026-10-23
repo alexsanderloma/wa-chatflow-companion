@@ -27,9 +27,9 @@ test("supplier detection is scoped to the company and active suppliers", () => {
 });
 
 test("suggested price uses net margin: total cost / (1 - margin)", () => {
-  assert.equal(DEFAULT_MARGINS.android, 30);
-  assert.equal(DEFAULT_MARGINS.iphone, 30);
-  assert.equal(DEFAULT_MARGINS.tablet, 30);
+  assert.equal(DEFAULT_MARGINS.android, 0);
+  assert.equal(DEFAULT_MARGINS.iphone, 0);
+  assert.equal(DEFAULT_MARGINS.tablet, 0);
   assert.equal(DEFAULT_MARGINS.acessorios, 0);
   assert.equal(DEFAULT_MARGINS.manutencao, 0);
   assert.equal(DEFAULT_MARGINS.outros, 0);

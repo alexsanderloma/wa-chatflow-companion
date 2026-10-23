@@ -12,11 +12,11 @@ export const CATEGORY_LABELS: Record<SupplierCategory, string> = {
   outros: "Outros",
 };
 
-/** Margem líquida alvo inicial (%) por categoria. */
+/** Nenhuma margem é predefinida: cada empresa salva a sua (0 = sem margem configurada). */
 export const DEFAULT_MARGINS: Record<SupplierCategory, number> = {
-  android: 30,
-  iphone: 30,
-  tablet: 30,
+  android: 0,
+  iphone: 0,
+  tablet: 0,
   acessorios: 0,
   manutencao: 0,
   outros: 0,
