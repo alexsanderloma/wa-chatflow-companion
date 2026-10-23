@@ -171,7 +171,8 @@ export const checkWhatsappStatus = createServerFn({ method: "POST" })
     let stateError = false;
     try {
       const s = await evoState(row.instance_name);
-      state = s?.instance?.state || (s as any)?.state || null;
+      const { parseEvoState } = await import("./evolution-flow");
+      state = parseEvoState(s);
     } catch (e) {
       stateError = true;
       console.warn("[evolution.state]", e);
