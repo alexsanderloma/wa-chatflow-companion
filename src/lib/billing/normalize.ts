@@ -25,7 +25,27 @@ export type NormalizedBillingEvent = {
   eventId?: string | null;
   /** Id do pagamento no provedor (Asaas). */
   externalPaymentId?: string | null;
+  /** Referência flowa:<company UUID>:<plan UUID> já validada (Asaas). */
+  flowaRef?: { companyId: string; planId: string } | null;
 };
+
+// Referência externa emitida pelo checkout FLOWA: 'flowa:<company UUID>:<plan UUID>'.
+const FLOWA_REF_RE =
+  /^flowa:([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}):([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
+
+export function buildFlowaReference(companyId: string, planId: string): string {
+  return `flowa:${companyId}:${planId}`;
+}
+
+/** Valida e extrai company/plan da externalReference; retorna null se inválida. */
+export function parseFlowaReference(
+  ref: string | null | undefined,
+): { companyId: string; planId: string } | null {
+  if (!ref) return null;
+  const m = FLOWA_REF_RE.exec(ref.trim());
+  if (!m) return null;
+  return { companyId: m[1].toLowerCase(), planId: m[2].toLowerCase() };
+}
 
 function lower(s: any): string | null {
   return typeof s === "string" && s.trim() ? s.trim().toLowerCase() : null;
@@ -187,6 +207,9 @@ export function normalizeAsaas(body: any): NormalizedBillingEvent {
 
   const value = typeof payment?.value === "number" ? payment.value : typeof subscription?.value === "number" ? subscription.value : null;
 
+  // Referência de plano apenas de metadados explícitos (externalReference); nunca inferida do valor.
+  const productRef = str(payment?.externalReference) ?? str(subscription?.externalReference);
+
   return {
     provider: "asaas",
     eventType: mapAsaasEvent(eventName, !!subId || eventName.toUpperCase().startsWith("SUBSCRIPTION_")),
@@ -194,12 +217,12 @@ export function normalizeAsaas(body: any): NormalizedBillingEvent {
     buyerEmail: email,
     externalSubscriptionId: subId,
     externalCustomerId: customerId,
-    // Referência de plano apenas de metadados explícitos (externalReference); nunca inferida do valor.
-    productRef: str(payment?.externalReference) ?? str(subscription?.externalReference),
+    productRef,
     amountCents: value != null ? Math.round(value * 100) : null,
     periodEnd: str(subscription?.nextDueDate),
     eventId: str(body?.id),
     externalPaymentId: str(payment?.id),
+    flowaRef: parseFlowaReference(productRef),
   };
 }
 
