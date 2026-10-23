@@ -9,8 +9,10 @@ export type BillingEventType =
   | "refunded"
   | "unknown";
 
+export type BillingProvider = "kiwify" | "cakto" | "perfectpay" | "asaas";
+
 export type NormalizedBillingEvent = {
-  provider: "kiwify" | "cakto" | "perfectpay";
+  provider: BillingProvider;
   eventType: BillingEventType;
   rawEventName: string;
   buyerEmail: string | null;
@@ -19,6 +21,10 @@ export type NormalizedBillingEvent = {
   productRef: string | null;
   amountCents: number | null;
   periodEnd: string | null;
+  /** Id único do evento no provedor (Asaas), usado para idempotência. */
+  eventId?: string | null;
+  /** Id do pagamento no provedor (Asaas). */
+  externalPaymentId?: string | null;
 };
 
 function lower(s: any): string | null {
@@ -133,6 +139,70 @@ export function normalizePerfectpay(body: any): NormalizedBillingEvent {
   };
 }
 
+// ---------- Asaas ----------
+// Docs: https://docs.asaas.com/docs/webhook-para-cobrancas e /webhook-para-assinaturas
+// Payload: { id, event, dateCreated, payment?: {...}, subscription?: {...} }
+export function mapAsaasEvent(name: string, hasSubscription: boolean): BillingEventType {
+  switch ((name || "").toUpperCase()) {
+    case "PAYMENT_RECEIVED":
+    case "PAYMENT_CONFIRMED":
+      return hasSubscription ? "subscription_renewed" : "purchase_approved";
+    case "PAYMENT_OVERDUE":
+    case "PAYMENT_CREDIT_CARD_CAPTURE_REFUSED":
+    case "PAYMENT_REPROVED_BY_RISK_ANALYSIS":
+      return "payment_failed";
+    case "PAYMENT_REFUNDED":
+      return "refunded";
+    case "PAYMENT_CHARGEBACK_REQUESTED":
+    case "PAYMENT_CHARGEBACK_DISPUTE":
+    case "PAYMENT_AWAITING_CHARGEBACK_REVERSAL":
+      return "chargeback";
+    case "SUBSCRIPTION_INACTIVATED":
+    case "SUBSCRIPTION_DELETED":
+      return "subscription_canceled";
+    default:
+      return "unknown";
+  }
+}
+
+function str(v: any): string | null {
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+export function normalizeAsaas(body: any): NormalizedBillingEvent {
+  const eventName = str(body?.event) ?? "";
+  const payment = body?.payment && typeof body.payment === "object" ? body.payment : null;
+  const subscription = body?.subscription && typeof body.subscription === "object" ? body.subscription : null;
+
+  // payment.subscription é o id da assinatura (string) quando a cobrança pertence a uma.
+  const subId = str(payment?.subscription) ?? str(subscription?.id);
+  const customerRaw = payment?.customer ?? subscription?.customer;
+  const customerId =
+    str(customerRaw) ?? (customerRaw && typeof customerRaw === "object" ? str(customerRaw.id) : null);
+
+  // O payload normalmente traz só o id do cliente; e-mail só quando presente explicitamente.
+  const email = lower(
+    pick(payment, "customer.email", "customerEmail") ?? pick(subscription, "customer.email", "customerEmail"),
+  );
+
+  const value = typeof payment?.value === "number" ? payment.value : typeof subscription?.value === "number" ? subscription.value : null;
+
+  return {
+    provider: "asaas",
+    eventType: mapAsaasEvent(eventName, !!subId || eventName.toUpperCase().startsWith("SUBSCRIPTION_")),
+    rawEventName: eventName,
+    buyerEmail: email,
+    externalSubscriptionId: subId,
+    externalCustomerId: customerId,
+    // Referência de plano apenas de metadados explícitos (externalReference); nunca inferida do valor.
+    productRef: str(payment?.externalReference) ?? str(subscription?.externalReference),
+    amountCents: value != null ? Math.round(value * 100) : null,
+    periodEnd: str(subscription?.nextDueDate),
+    eventId: str(body?.id),
+    externalPaymentId: str(payment?.id),
+  };
+}
+
 export function normalize(provider: string, body: any): NormalizedBillingEvent {
   switch (provider) {
     case "kiwify":
@@ -141,6 +211,8 @@ export function normalize(provider: string, body: any): NormalizedBillingEvent {
       return normalizeCakto(body);
     case "perfectpay":
       return normalizePerfectpay(body);
+    case "asaas":
+      return normalizeAsaas(body);
     default:
       throw new Error(`provedor desconhecido: ${provider}`);
   }
