@@ -1,4 +1,4 @@
-# 📘 Manual do Clonador — AtendeZap AI
+# 📘 Manual do Clonador — Flowa
 
 Guia passo a passo para colocar sua cópia no ar. **Siga na ordem.** Onde tiver bloco `> PROMPT`, **copie e cole no chat do Lovable** exatamente como está.
 
@@ -127,7 +127,7 @@ Só faça se quiser cobrar cartão automaticamente.
 Já está pronta no código. Só precisa do **Passo 2** ter sido feito + adicionar o redirect URI no Google Cloud Console:
 
 ```
-https://atendezap.live/api/public/google-callback
+https://flowa.store/api/public/google-callback
 ```
 
 Cada cliente conecta a própria conta em `/app/agente/avancado` → botão "Conectar Google Agenda".
@@ -138,7 +138,7 @@ Cada cliente conecta a própria conta em `/app/agente/avancado` → botão "Cone
 
 No topo do Lovable → botão **"Publish"** → confirme.
 
-Sua URL: `https://atendezap.live`
+Sua URL: `https://flowa.store`
 Para domínio próprio: Project Settings → Domains.
 
 ---
