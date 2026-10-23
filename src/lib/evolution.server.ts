@@ -1,16 +1,18 @@
 import * as QRCode from "qrcode";
 import { supportWhatsappUrl } from "@/config/brand";
+import { EvolutionError, classifyHttpFailure, parseQrPayload, withEvoRetry } from "./evolution-flow";
 
 // Wrapper server-only para a Evolution API v2.
 // Arquivo *.server.ts é bloqueado do bundle client.
 
 const SUPPORT_SUFFIX = ` Se persistir, fale com o suporte: ${supportWhatsappUrl}`;
+const DEFAULT_TIMEOUT_MS = 15_000;
 
 function env() {
   const url = process.env.EVOLUTION_API_URL;
   const key = process.env.EVOLUTION_API_KEY;
   if (!url || !key) {
-    throw new Error(`Servidor do WhatsApp não configurado. Configure EVOLUTION_API_URL e EVOLUTION_API_KEY nos segredos do backend.${SUPPORT_SUFFIX}`);
+    throw new EvolutionError("nao_configurada", `Servidor do WhatsApp não configurado.${SUPPORT_SUFFIX}`);
   }
   return { url: url.replace(/\/+$/, ""), key };
 }
@@ -30,10 +32,14 @@ async function evo<T = any>(
     res = await fetch(`${url}${path}`, {
       ...init,
       headers,
+      signal: init.signal ?? AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
       body: init.json !== undefined ? JSON.stringify(init.json) : init.body,
     });
   } catch (e: any) {
-    throw new Error(`Evolution API indisponível: ${e?.message || "falha de rede"}.${SUPPORT_SUFFIX}`);
+    const timeout = e?.name === "TimeoutError" || e?.name === "AbortError";
+    // Nunca inclui URL/chave na mensagem.
+    throw new EvolutionError(timeout ? "timeout" : "api_indisponivel",
+      `Servidor de integração do WhatsApp ${timeout ? "não respondeu a tempo" : "indisponível"}.${SUPPORT_SUFFIX}`);
   }
   const text = await res.text();
   let data: any = null;
@@ -43,8 +49,9 @@ async function evo<T = any>(
     data = { raw: text };
   }
   if (!res.ok) {
-    const msg = data?.message || data?.error || text || `HTTP ${res.status}`;
-    throw new Error(`Evolution API: ${msg}.${SUPPORT_SUFFIX}`);
+    const raw = data?.response?.message ?? data?.message ?? data?.error ?? `HTTP ${res.status}`;
+    const msg = (Array.isArray(raw) ? raw.join(" ") : String(raw)).slice(0, 200);
+    throw new EvolutionError(classifyHttpFailure(res.status, msg), `Evolution API: ${msg}.${SUPPORT_SUFFIX}`, res.status);
   }
   return data as T;
 }
@@ -64,76 +71,39 @@ export async function evoCreateInstance(instanceName: string, webhookUrl?: strin
       events: ["MESSAGES_UPSERT"],
     };
   }
-  return evo(`/instance/create`, { method: "POST", json: body });
+  return evo(`/instance/create`, { method: "POST", json: body, signal: AbortSignal.timeout(20_000) });
 }
 
-export async function evoConnect(instanceName: string): Promise<{ base64?: string; code?: string; pairingCode?: string }> {
-  // GET /instance/connect/{instance} → { base64, code, pairingCode }
-  return evo(`/instance/connect/${encodeURIComponent(instanceName)}`, { method: "GET" });
+export async function evoConnect(instanceName: string): Promise<any> {
+  // GET /instance/connect/{instance} → { base64, code, pairingCode } (só usar no clique "Conectar").
+  return withEvoRetry(() => evo(`/instance/connect/${encodeURIComponent(instanceName)}`, { method: "GET" }));
 }
 
-function asImageDataUrl(value: unknown, allowRawBase64 = false): string | null {
-  const text = typeof value === "string" ? value.trim() : "";
-  if (!text) return null;
-  if (text.startsWith("data:image/")) return text;
-  const base64 = text.includes("base64,") ? text.split("base64,").pop()?.trim() : text;
-  if (allowRawBase64 && base64 && base64.length > 120 && /^[A-Za-z0-9+/=\s]+$/.test(base64) && looksLikeImageBase64(base64)) {
-    return `data:image/png;base64,${base64.replace(/\s/g, "")}`;
-  }
-  return null;
+/** Reinicia a instância (não apaga dados) — usado só quando connect não devolve QR. */
+export async function evoRestart(instanceName: string) {
+  return evo(`/instance/restart/${encodeURIComponent(instanceName)}`, { method: "PUT" });
 }
 
-function looksLikeImageBase64(base64: string) {
-  try {
-    const bin = atob(base64.replace(/\s/g, "").slice(0, 64));
-    return (
-      (bin.charCodeAt(0) === 0x89 && bin.slice(1, 4) === "PNG") ||
-      (bin.charCodeAt(0) === 0xff && bin.charCodeAt(1) === 0xd8) ||
-      (bin.slice(0, 4) === "RIFF" && bin.slice(8, 12) === "WEBP")
-    );
-  } catch {
-    return false;
-  }
-}
-
-function extractQrCode(payload: any): string | null {
-  const candidates = [
-    payload?.code,
-    payload?.qrcode?.code,
-    payload?.qrCode,
-    payload?.qrcode,
-    payload?.qr,
-  ];
-  for (const value of candidates) {
-    if (typeof value === "string" && value.trim() && !asImageDataUrl(value, false)) return value.trim();
-  }
-  return null;
-}
-
-export async function evoGetQr(instanceName: string): Promise<{ qrBase64: string | null; code: string | null; pairingCode: string | null }> {
-  const payload: any = await evoConnect(instanceName);
-  const image =
-    asImageDataUrl(payload?.base64, true) ||
-    asImageDataUrl(payload?.qrcode?.base64, true) ||
-    asImageDataUrl(payload?.qr?.base64, true) ||
-    asImageDataUrl(payload?.qrcode, true) ||
-    asImageDataUrl(payload?.qr, true);
-  const code = extractQrCode(payload);
-
-  if (image) return { qrBase64: image, code, pairingCode: payload?.pairingCode ?? payload?.qrcode?.pairingCode ?? null };
+export async function qrFromPayload(payload: any): Promise<{ qrBase64: string | null; code: string | null; pairingCode: string | null }> {
+  const { image, code, pairingCode } = parseQrPayload(payload);
+  if (image) return { qrBase64: image, code, pairingCode };
   if (code) {
     const qrBase64 = await QRCode.toDataURL(code, { width: 320, margin: 2, errorCorrectionLevel: "M" });
-    return { qrBase64, code, pairingCode: payload?.pairingCode ?? payload?.qrcode?.pairingCode ?? null };
+    return { qrBase64, code, pairingCode };
   }
-  return { qrBase64: null, code: null, pairingCode: payload?.pairingCode ?? payload?.qrcode?.pairingCode ?? null };
+  return { qrBase64: null, code: null, pairingCode };
+}
+
+export async function evoGetQr(instanceName: string) {
+  return qrFromPayload(await evoConnect(instanceName));
 }
 
 export async function evoState(instanceName: string): Promise<{ instance?: { state?: string }; state?: string }> {
-  return evo(`/instance/connectionState/${encodeURIComponent(instanceName)}`, { method: "GET" });
+  return withEvoRetry(() => evo(`/instance/connectionState/${encodeURIComponent(instanceName)}`, { method: "GET", signal: AbortSignal.timeout(10_000) }));
 }
 
 export async function evoSetWebhook(instanceName: string, webhookUrl: string) {
-  return evo(`/webhook/set/${encodeURIComponent(instanceName)}`, {
+  return withEvoRetry(() => evo(`/webhook/set/${encodeURIComponent(instanceName)}`, {
     method: "POST",
     json: {
       webhook: {
@@ -144,7 +114,7 @@ export async function evoSetWebhook(instanceName: string, webhookUrl: string) {
         events: ["MESSAGES_UPSERT"],
       },
     },
-  });
+  }));
 }
 
 export async function evoSendText(instanceName: string, number: string, text: string, timeoutMs?: number) {
