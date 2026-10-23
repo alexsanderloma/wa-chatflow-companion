@@ -11,9 +11,14 @@ import { LogIn, Pause, Play, CalendarClock, Loader2, KeyRound, Eye, Sparkles } f
 import { brand } from "@/config/brand";
 import { listCompanies, suspendCompany, extendTrial, resetCompanyOwnerPassword, getCompanyDetails } from "@/lib/master.functions";
 import { adminGrantCredits } from "@/lib/credits.functions";
+import { MasterCompanyPlanDialog, subscriptionStatusLabel } from "@/components/master-company-plan-dialog";
 
 export const Route = createFileRoute("/master/empresas")({
-  head: () => ({ meta: [{ title: `${brand.name} — Empresas` }] }),
+  head: () => ({ meta: [{ title: `${brand.name} — Empresas e gestão de planos` },
+    { name: "description", content: "Gestão administrativa de empresas, planos e histórico de assinaturas FLOWA." },
+    { property: "og:title", content: `${brand.name} — Empresas e gestão de planos` },
+    { property: "og:description", content: "Gestão de planos por empresa no Painel Master FLOWA." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: EmpresasPage,
 });
 
@@ -33,6 +38,7 @@ function EmpresasPage() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [planCompanyId, setPlanCompanyId] = useState<string | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -134,7 +140,8 @@ function EmpresasPage() {
         </form>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
+        <div className="min-w-[1080px]">
         <div className="grid grid-cols-12 text-xs font-medium text-muted-foreground bg-muted/50 px-4 py-2">
           <div className="col-span-3">Nome</div>
           <div className="col-span-2">Status</div>
@@ -154,6 +161,7 @@ function EmpresasPage() {
                 <div className="col-span-3 min-w-0">
                   <div className="font-medium truncate">{c.nome}</div>
                   <div className="text-xs text-muted-foreground truncate">{c.slug}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{c.current_subscription?.plan?.nome ?? "Sem plano operacional"}{c.current_subscription ? ` · ${subscriptionStatusLabel(c.current_subscription.status)}` : ""}</div>
                 </div>
                 <div className="col-span-2">
                   <StatusBadge s={c.status_cobranca} />
@@ -168,6 +176,7 @@ function EmpresasPage() {
                   {c.ultima_atividade ? new Date(c.ultima_atividade).toLocaleDateString("pt-BR") : "—"}
                 </div>
                 <div className="col-span-2 flex justify-end gap-1">
+                  <Button size="sm" variant="outline" title="Gerenciar plano" aria-label={`Gerenciar plano de ${c.nome}`} onClick={() => setPlanCompanyId(c.id)}>Plano</Button>
                   <Button size="sm" variant="outline" onClick={() => openDetails(c.id)} title="Ver detalhes">
                     <Eye className="size-3.5" />
                   </Button>
@@ -192,7 +201,10 @@ function EmpresasPage() {
             ))}
           </ul>
         )}
+        </div>
       </Card>
+
+      <MasterCompanyPlanDialog companyId={planCompanyId} onClose={() => setPlanCompanyId(null)} onSaved={reload} />
 
       {pages > 1 && (
         <div className="flex items-center justify-between text-sm">
