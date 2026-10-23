@@ -1,5 +1,10 @@
 # FLOWA reference-led presentation replacement
 
+## Safe checkout upgrade
+- [x] Explicit upgrade navigation with real plan slug, current/selected plans and stable return path.
+- [x] Support-only upgrade fallback; matching-plan reuse and durable duplicate prevention for normal checkout.
+- [x] 15 decision/regression tests passed; authenticated FLOWA Teste trial navigation, selection, return and ordinary redirect verified, desktop/mobile without overflow or runtime errors; automatic build OK. No real Asaas calls or subscription writes. Scan and request publication.
+
 ## Master company plan management
 - [x] Add super-admin-only atomic assign/change/cancel with existing audit history; no external billing calls or existing data edits during implementation.
 - [x] Add company plan dialog and subscription history presentation.

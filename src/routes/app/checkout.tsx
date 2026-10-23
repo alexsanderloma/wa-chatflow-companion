@@ -1,11 +1,11 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { brand } from "@/config/brand";
+import { brand, supportWhatsappUrl } from "@/config/brand";
 import {
   Loader2, ShieldCheck, ArrowLeft, Check, TrendingUp, Crown, Smartphone,
   Users, MessageSquare, Headphones, Calendar, BarChart3, Webhook, Zap, ExternalLink, Sparkles, Lock,
@@ -13,8 +13,9 @@ import {
 import { createCheckoutCompany, startAsaasCheckout } from "@/lib/checkout.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { trialDaysLeft } from "@/lib/tenant";
+import { checkoutRedirect, CHECKOUT_SUPPORT_MESSAGE, CHECKOUT_CURRENT_STATUSES } from "@/lib/checkout-policy";
 
-type Search = { plano?: string };
+type Search = { plano?: string; mode?: string };
 
 type Plano = {
   id: string;
@@ -35,8 +36,13 @@ type Plano = {
 export const Route = createFileRoute("/app/checkout")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     plano: typeof s.plano === "string" ? s.plano : undefined,
+    mode: typeof s.mode === "string" ? s.mode : undefined,
   }),
-  head: () => ({ meta: [{ title: `${brand.name} — Escolha seu plano` }] }),
+  head: () => ({ meta: [{ title: `${brand.name} — Escolha e troca de plano` },
+    { name: "description", content: "Compare planos FLOWA e gerencie seu pagamento com segurança." },
+    { property: "og:title", content: `${brand.name} — Escolha e troca de plano` },
+    { property: "og:description", content: "Escolha de planos e orientação segura para alterações de assinatura FLOWA." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: CheckoutPage,
 });
 
@@ -77,7 +83,8 @@ function normalizeFeatureText(text: string) {
 function CheckoutPage() {
   const ctx = Route.useRouteContext();
   const navigate = useNavigate();
-  const search = useSearch({ from: "/app/checkout" }) as Search;
+  const search = Route.useSearch();
+  const upgradeMode = search.mode === "upgrade";
   const createCompany = useServerFn(createCheckoutCompany);
   const startCheckout = useServerFn(startAsaasCheckout);
 
@@ -87,23 +94,35 @@ function CheckoutPage() {
   const [paying, setPaying] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [waiting, setWaiting] = useState(false);
+  const [supportMessage, setSupportMessage] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<{ nome: string; slug: string } | null>(null);
+  const [currentPlanError, setCurrentPlanError] = useState(false);
+  const [plansError, setPlansError] = useState(false);
 
   // Modo: "trial" (sem empresa, oferecer teste grátis) vs "paywall" (empresa existe mas precisa pagar)
   const hasCompany = !!ctx.company;
   const trialActive =
-    hasCompany && ctx.company!.status_cobranca === "trial" && trialDaysLeft(ctx.company!.trial_ate) > 0;
-  const paywallMode = hasCompany && !trialActive && ctx.company!.status_cobranca !== "ativo";
+    !!ctx.company && ctx.company.status_cobranca === "trial" && trialDaysLeft(ctx.company.trial_ate) > 0;
+  const paywallMode = hasCompany && !trialActive && ctx.company?.status_cobranca !== "ativo";
 
   // Empresa ativa ou em trial ainda válido → não deveria estar aqui
   useEffect(() => {
-    if (!ctx.company) return;
-    if (ctx.company.status_cobranca === "ativo" || trialActive) {
-      navigate({ to: ctx.company.onboarding_completed ? "/app/dashboard" : "/app/onboarding", replace: true });
-    }
-  }, [ctx.company, navigate, trialActive]);
+    const target = checkoutRedirect(ctx.company, search.mode);
+    if (target) navigate({ to: target, replace: true });
+  }, [ctx.company, navigate, trialActive, search.mode]);
 
   useEffect(() => {
-    supabase.from("plan").select("*").eq("ativo", true).order("ordem").then(({ data }) => {
+    if (!upgradeMode || !ctx.company) return;
+    let live = true;
+    supabase.from("subscription").select("plan:plan(nome,slug)")
+      .eq("company_id", ctx.company.id).in("status", CHECKOUT_CURRENT_STATUSES).maybeSingle()
+      .then(({ data, error }) => { if (live) { setCurrentPlan(data?.plan ?? null); setCurrentPlanError(!!error); } });
+    return () => { live = false; };
+  }, [upgradeMode, ctx.company?.id]);
+
+  useEffect(() => {
+    supabase.from("plan").select("*").eq("ativo", true).order("ordem").then(({ data, error }) => {
+      setPlansError(!!error || !data?.length);
       if (data?.length) {
         const list = data as Plano[];
         setPlans(list);
@@ -158,36 +177,39 @@ function CheckoutPage() {
     if (!plano) return toast.error("Selecione um plano.");
     setPaying(true);
     try {
-      const res = await startCheckout({ data: { plano_slug: plano.slug } });
+      const res = await startCheckout({ data: { plano_slug: plano.slug, mode: upgradeMode ? "upgrade" : undefined } });
+      if (res.kind === "support") { setSupportMessage(res.message); return; }
       setPaymentUrl(res.paymentUrl);
       window.open(res.paymentUrl, "_blank", "noopener,noreferrer");
       setWaiting(true);
     } catch (e: any) {
-      toast.error(e.message || "Falha ao iniciar o pagamento");
+      const message = "Não foi possível iniciar o pagamento com segurança. Confira com o suporte antes de tentar outra cobrança.";
+      setSupportMessage(message);
+      toast.error(message);
     } finally {
       setPaying(false);
     }
   }
 
-  const headerBadge = paywallMode
+  const headerBadge = upgradeMode ? { icon: <CreditCardBadge />, text: "Troca de plano" } : paywallMode
     ? { icon: <Lock className="size-3.5 mr-1.5" />, text: "Seu período de teste terminou" }
     : { icon: <Sparkles className="size-3.5 mr-1.5" />, text: `${plans[0]?.trial_days ?? 3} dias grátis sem cartão` };
-  const headerTitle = paywallMode
+  const headerTitle = upgradeMode ? "Escolha seu próximo plano" : paywallMode
     ? "Ative seu plano para continuar"
     : "Comece grátis em segundos";
-  const headerSubtitle = paywallMode
+  const headerSubtitle = upgradeMode ? "Seu plano e seu acesso permanecem como estão enquanto você compara as opções." : paywallMode
     ? "Seus dados ficam aqui esperando. Assim que o pagamento for confirmado, seu acesso é liberado automaticamente."
     : "Escolha um plano para começar. Você não precisa pagar agora — só vai cobrar no final do período de teste, se quiser continuar.";
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
-        <button
-          onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
+        <Button variant="ghost"
+          onClick={async () => { if (upgradeMode && ctx.company) { await navigate({ to: ctx.company.onboarding_completed ? "/app/configuracoes" : "/app/onboarding" }); return; } await supabase.auth.signOut(); window.location.href = "/"; }}
           className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-6"
         >
-          <ArrowLeft className="size-3.5" /> Sair
-        </button>
+          <ArrowLeft className="size-3.5" /> {upgradeMode ? "Voltar" : "Sair"}
+        </Button>
 
         <div className="text-center max-w-2xl mx-auto mb-10 md:mb-14">
           <Badge variant="secondary" className="mb-4 px-3 py-1 text-xs font-semibold uppercase tracking-wider">
@@ -202,7 +224,12 @@ function CheckoutPage() {
           </p>
         </div>
 
-        {plans.length === 0 ? (
+        {upgradeMode && <section className="border-y py-4 mb-8 space-y-2">
+          <p>Plano atual: <strong>{currentPlanError ? "Não foi possível confirmar o plano atual" : currentPlan?.nome ?? plans.find((p) => p.slug === ctx.company?.selected_plan_slug)?.nome ?? "Nenhuma assinatura operacional vinculada"}</strong></p>
+          <p>Plano escolhido: <strong>{plano?.nome ?? "Selecione um plano"}</strong></p>
+          {trialActive && <p className="text-muted-foreground text-sm">Seu teste continua até {ctx.company ? new Date(ctx.company.trial_ate).toLocaleDateString("pt-BR") : ""}. A escolha não inicia nem renova o teste.</p>}
+        </section>}
+        {plansError ? <p role="alert" className="text-destructive">Não foi possível carregar os planos. Tente novamente mais tarde.</p> : plans.length === 0 ? (
           <div className="grid place-items-center py-20"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
         ) : (
           <>
@@ -237,7 +264,7 @@ function CheckoutPage() {
                         <span className="text-muted-foreground text-sm">/mês</span>
                       </div>
                       <p className="text-sm text-muted-foreground mt-2 min-h-[2.5rem]">{p.descricao}</p>
-                      {!paywallMode && (
+                      {!paywallMode && !upgradeMode && (
                         <p className="text-[11px] text-primary font-semibold mt-1">
                           {p.trial_days} dias grátis — sem cartão
                         </p>
@@ -273,8 +300,14 @@ function CheckoutPage() {
             </div>
 
             <div className="max-w-2xl mx-auto">
-              <Card className="p-6 md:p-8 text-center">
-                {waiting ? (
+              <div className="border-t pt-6 md:pt-8 text-center">
+                {supportMessage && <p role="status" className="border border-primary/30 rounded-md p-4 mb-4 text-sm">{supportMessage}</p>}
+                {upgradeMode ? <div className="space-y-4">
+                  <h2 className="font-display text-xl font-bold">Solicitar alteração de plano</h2>
+                  <p className="text-sm text-muted-foreground">{CHECKOUT_SUPPORT_MESSAGE}</p>
+                  <Button asChild disabled={!plano}><a href={`${supportWhatsappUrl}?text=${encodeURIComponent(`Olá! Quero alterar o plano da minha empresa ${ctx.company?.nome ?? ""} para ${plano?.nome ?? ""}. Por favor, confiram também a cobrança externa existente.`)}`} target="_blank" rel="noreferrer">Falar com o suporte <ExternalLink className="size-4" /></a></Button>
+                  <p className="text-xs text-muted-foreground">Nenhum pagamento será aberto nesta tela. A solicitação ao suporte não confirma o upgrade.</p>
+                </div> : waiting ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20 text-sm">
                       <Loader2 className="size-4 animate-spin text-primary" />
@@ -308,7 +341,7 @@ function CheckoutPage() {
                       onClick={pagarAgora}
                       disabled={!plano || paying}
                       size="lg"
-                      className="w-full md:w-auto min-w-[280px] bg-gradient-brand text-primary-foreground hover:opacity-90 font-semibold"
+                      className="w-full md:w-auto font-semibold"
                     >
                       {paying ? <Loader2 className="size-4 mr-2 animate-spin" /> : <ExternalLink className="size-4 mr-2" />}
                       Assinar {plano?.nome} agora
@@ -329,17 +362,17 @@ function CheckoutPage() {
                       onClick={iniciarTrial}
                       disabled={!plano || creating}
                       size="lg"
-                      className="w-full md:w-auto min-w-[280px] bg-gradient-brand text-primary-foreground hover:opacity-90 font-semibold"
+                      className="w-full md:w-auto font-semibold"
                     >
                       {creating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Sparkles className="size-4 mr-2" />}
                       Começar {plano?.trial_days ?? 3} dias grátis
                     </Button>
                   </>
                 )}
-                <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                {!upgradeMode && <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <ShieldCheck className="size-3.5" /> Pagamento seguro processado pelo Asaas.
-                </div>
-              </Card>
+                </div>}
+              </div>
             </div>
           </>
         )}
@@ -356,3 +389,5 @@ function Limit({ label, v }: { label: string; v: number }) {
     </div>
   );
 }
+
+function CreditCardBadge() { return <ShieldCheck className="size-3.5 mr-1.5" />; }
