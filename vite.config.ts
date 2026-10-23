@@ -12,19 +12,12 @@ export default defineConfig({
       name: 'flowa-connectivity-client',
       enforce: 'pre',
       resolveId(source, importer) {
-        if (source === './client' && importer?.replaceAll('\\', '/').endsWith('/integrations/supabase/auth-attacher.ts')) {
+        if (source === '@/integrations/supabase/client' ||
+          (source === './client' && importer?.replaceAll('\\', '/').endsWith('/integrations/supabase/auth-attacher.ts'))) {
           return `${process.cwd()}/src/lib/supabase-connectivity.ts`;
         }
       },
     }],
-    resolve: {
-      // Keep the generated integration immutable; application imports share the
-      // production connectivity wrapper. The plugin covers the attacher's
-      // relative import without touching either generated file.
-      alias: {
-        '@/integrations/supabase/client': `${process.cwd()}/src/lib/supabase-connectivity.ts`,
-      },
-    },
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).

@@ -13,6 +13,7 @@ export async function handleSupabaseProxy(request: Request): Promise<Response> {
   const onAbort = () => controller.abort();
   const cleanup = () => { clearTimeout(timer); request.signal.removeEventListener('abort', onAbort); };
   request.signal.addEventListener('abort', onAbort, { once: true });
+  if (request.signal.aborted) controller.abort();
   try {
     const headers = proxyHeaders(request.headers);
     // No privileged client, server cookies, secret injection, or redirect following.
