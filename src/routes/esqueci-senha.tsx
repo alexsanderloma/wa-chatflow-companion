@@ -7,10 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { brand } from "@/config/brand";
+import { withTimeout, isAuthConnectionError, AUTH_CONNECTION_MESSAGE } from "@/lib/auth-timeout";
 
 export const Route = createFileRoute("/esqueci-senha")({
   ssr: false,
-  head: () => ({ meta: [{ title: `${brand.name} — Recuperar senha` }] }),
+  head: () => ({ meta: [
+    { title: `${brand.name} — Recuperar senha` },
+    { name: 'description', content: 'Recupere o acesso à sua conta FLOWA com segurança.' },
+    { property: 'og:title', content: `${brand.name} — Recuperar senha` },
+    { property: 'og:description', content: 'Recupere o acesso à sua conta FLOWA com segurança.' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+  ] }),
   component: Page,
 });
 
@@ -21,12 +29,15 @@ function Page() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-senha`,
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Se este e-mail existir, enviamos um link de recuperação.");
+    try {
+      const { error } = await withTimeout(supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-senha`,
+      }));
+      if (error) return toast.error(isAuthConnectionError(error) ? AUTH_CONNECTION_MESSAGE : 'Não foi possível solicitar a recuperação agora. Tente novamente.');
+      toast.success("Se este e-mail existir, enviamos um link de recuperação.");
+    } catch (error) {
+      toast.error(isAuthConnectionError(error) ? AUTH_CONNECTION_MESSAGE : 'Não foi possível solicitar a recuperação agora. Tente novamente.');
+    } finally { setLoading(false); }
   }
 
   return (

@@ -21,7 +21,7 @@ import { BrandTerrain } from "@/components/brand-terrain";
 import { BrandMark } from "@/components/brand-mark";
 import { brand } from "@/config/brand";
 import { resolveAuthMode, validateSignup, PASSWORD_MIN, type AuthMode } from "@/lib/auth-mode";
-import { withTimeout, AuthTimeoutError, resolvePostAuthDestination } from "@/lib/auth-timeout";
+import { withTimeout, isAuthConnectionError, AUTH_CONNECTION_MESSAGE, resolvePostAuthDestination } from "@/lib/auth-timeout";
 
 type Search = { modo?: "login" | "signup"; plano?: string };
 
@@ -40,8 +40,8 @@ export const Route = createFileRoute("/entrar")({
     plano: typeof s.plano === "string" ? s.plano : undefined,
   }),
   beforeLoad: async ({ search }) => {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) {
+    const result = await withTimeout(supabase.auth.getUser()).catch(() => null);
+    if (result?.data.user) {
       const dest = search.plano ? `/app/checkout?plano=${encodeURIComponent(search.plano)}` : "/app/dashboard";
       throw redirect({ href: dest });
     }
@@ -99,6 +99,7 @@ function EntrarPage() {
       if (needsPassword) {
         const { data, error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }));
         if (error) {
+          if (isAuthConnectionError(error)) return toast.error(AUTH_CONNECTION_MESSAGE);
           const m = (error.message || "").toLowerCase();
           if (m.includes("confirm")) return toast.error("Confirme seu e-mail pelo link que enviamos antes de entrar.");
           return toast.error("E-mail ou senha incorretos. Tente novamente ou recupere sua senha.");
@@ -117,6 +118,7 @@ function EntrarPage() {
         options: { emailRedirectTo: window.location.origin + (search.plano ? `/app/checkout?plano=${encodeURIComponent(search.plano)}` : "/app/checkout") },
       }));
       if (signUpErr) {
+        if (isAuthConnectionError(signUpErr)) return toast.error(AUTH_CONNECTION_MESSAGE);
         const msg = (signUpErr.message || "").toLowerCase();
         if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
           toast.message("Não foi possível criar a conta com este e-mail.", { description: "Se você já tem conta, entre ou recupere sua senha." });
@@ -140,7 +142,7 @@ function EntrarPage() {
       // Sem sessão: confirmação por e-mail pendente (ou e-mail já cadastrado — resposta neutra).
       setSentTo(email.trim());
     } catch (err) {
-      if (err instanceof AuthTimeoutError) toast.error("A conexão está demorando mais que o normal. Verifique sua internet e tente novamente.");
+      if (isAuthConnectionError(err)) toast.error(AUTH_CONNECTION_MESSAGE);
       else toast.error("Não foi possível confirmar seu acesso agora. Tente novamente.");
     } finally {
       setLoading(false);
