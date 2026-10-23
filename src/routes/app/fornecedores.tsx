@@ -142,6 +142,7 @@ function FornecedoresPage() {
           {data.margins.map((m) => (
             <div key={m.categoria} className="space-y-2 border border-border p-3">
               <div className="text-sm font-medium">{CATEGORY_LABELS[m.categoria as SupplierCategory]}</div>
+              {m.margem_liquida_pct === 0 && <p className="text-xs text-muted-foreground">Sem margem configurada: defina sua própria regra antes de usar o preço sugerido.</p>}
               <div className="flex gap-2">
                 <div className="flex-1"><Label className="text-xs">Margem %</Label><Input type="number" value={margins[m.categoria]?.m ?? ""} onChange={(e) => setMargins({ ...margins, [m.categoria]: { ...margins[m.categoria], m: e.target.value } })} /></div>
                 <div className="flex-1"><Label className="text-xs">Custos extras (R$)</Label><Input type="number" value={margins[m.categoria]?.c ?? ""} onChange={(e) => setMargins({ ...margins, [m.categoria]: { ...margins[m.categoria], c: e.target.value } })} /></div>

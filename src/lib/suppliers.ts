@@ -17,9 +17,9 @@ export const DEFAULT_MARGINS: Record<SupplierCategory, number> = {
   android: 30,
   iphone: 30,
   tablet: 30,
-  acessorios: 30,
-  manutencao: 30,
-  outros: 30,
+  acessorios: 0,
+  manutencao: 0,
+  outros: 0,
 };
 
 export const DEFAULT_VALIDITY_HOURS = 24;
