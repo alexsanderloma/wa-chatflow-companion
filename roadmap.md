@@ -1,5 +1,10 @@
 # FLOWA reference-led presentation replacement
 
+## Same-origin connectivity fallback
+- [ ] Implement allowlisted server proxy and production-only browser connectivity without editing managed clients.
+- [ ] Preserve session storage and direct Realtime; improve login/recovery connection errors.
+- [ ] Run focused tests and inspect automatic checks; probe health and empty Auth/REST without credentials or writes. No publish.
+
 ## Real human escalation
 - [x] Add durable tenant-isolated escalation, deterministic marker and notification-before-promise safeguards.
 - [x] Configure company-specific responsible contact and FLOWA Teste only; database readback confirmed Alex and the requested phone.
