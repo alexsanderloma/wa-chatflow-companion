@@ -218,7 +218,7 @@ export const listPlansBasic = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("plan")
-      .select("id, nome, preco_cents, moeda, intervalo, trial_days")
+      .select("id, slug, nome, preco_cents, moeda, intervalo, trial_days")
       .eq("ativo", true)
       .order("preco_cents", { ascending: true });
     return { plans: data ?? [] };
