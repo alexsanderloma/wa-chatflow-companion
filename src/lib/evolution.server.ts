@@ -1,9 +1,10 @@
 import * as QRCode from "qrcode";
+import { supportWhatsappUrl } from "@/config/brand";
 
 // Wrapper server-only para a Evolution API v2.
 // Arquivo *.server.ts é bloqueado do bundle client.
 
-const SUPPORT_SUFFIX = " Se persistir, fale com o suporte: https://wa.me/5551982913030";
+const SUPPORT_SUFFIX = ` Se persistir, fale com o suporte: ${supportWhatsappUrl}`;
 
 function env() {
   const url = process.env.EVOLUTION_API_URL;

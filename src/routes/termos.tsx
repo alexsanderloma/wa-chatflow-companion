@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { brand, supportWhatsappUrl, supportWhatsappDisplay } from "@/config/brand";
 
 export const Route = createFileRoute("/termos")({
   head: () => ({
     meta: [
-      { title: "Termos e Condições — ATENDE ZAP" },
-      { name: "description", content: "Termos e Condições de uso do ATENDE ZAP." },
+      { title: `Termos e Condições — ${brand.name}` },
+      { name: "description", content: `Termos e Condições de uso da ${brand.name}.` },
+      { property: "og:title", content: `Termos e Condições — ${brand.name}` },
+      { property: "og:description", content: `Termos e Condições de uso da ${brand.name}.` },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TermosPage,
@@ -22,8 +27,8 @@ function TermosPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900">1. Quem somos</h2>
             <p className="mt-2">
-              Estes Termos regulam o uso do serviço ATENDE ZAP ("Serviço"), fornecido por
-              <strong> ATENDE ZAP</strong> ("nós", "nosso"). Ao usar o Serviço, você concorda com
+              Estes Termos regulam o uso do serviço {brand.name} ("Serviço"), fornecido por
+              <strong> {brand.name}</strong> ("nós", "nosso"). Ao usar o Serviço, você concorda com
               estes Termos. Se não concordar, não utilize o Serviço.
             </p>
           </section>
@@ -40,7 +45,7 @@ function TermosPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900">3. Descrição do Serviço</h2>
             <p className="mt-2">
-              O ATENDE ZAP oferece automação e gestão de atendimento via WhatsApp, incluindo
+              A {brand.name} oferece automação e gestão de atendimento via WhatsApp, incluindo
               recursos de mensageria, fluxos automatizados e integrações.
             </p>
           </section>
@@ -61,7 +66,7 @@ function TermosPage() {
             <h2 className="text-xl font-semibold text-slate-900">5. Propriedade intelectual</h2>
             <p className="mt-2">
               Todo o software, marca, documentação e materiais do Serviço são de propriedade
-              do ATENDE ZAP. Concedemos a você uma licença limitada, não exclusiva e
+              da {brand.name}. Concedemos a você uma licença limitada, não exclusiva e
               intransferível para usar o Serviço conforme o plano contratado.
             </p>
           </section>
@@ -121,14 +126,14 @@ function TermosPage() {
             <h2 className="text-xl font-semibold text-slate-900">11. Lei aplicável</h2>
             <p className="mt-2">
               Estes Termos são regidos pelas leis do Brasil. Fica eleito o foro do domicílio
-              do ATENDE ZAP para dirimir controvérsias, salvo disposição legal em contrário.
+              da {brand.name} para dirimir controvérsias, salvo disposição legal em contrário.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-slate-900">12. Contato</h2>
             <p className="mt-2">
-              Dúvidas sobre estes Termos: entre em contato pelos canais do Serviço ou via
+              Dúvidas sobre estes Termos: entre em contato pelo WhatsApp <a className="underline" href={supportWhatsappUrl} target="_blank" rel="noopener noreferrer">{supportWhatsappDisplay}</a> ou via
               paddle.net para questões de cobrança.
             </p>
           </section>
