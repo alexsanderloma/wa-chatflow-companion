@@ -106,14 +106,14 @@ function Header({
 }) {
   return (
     <header className="lp-header sticky top-0 z-50 backdrop-blur-xl">
-      <div className="mx-auto max-w-7xl px-4 sm:px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between gap-3">
+      <div className="lp-header-inner mx-auto px-4 sm:px-5 md:px-8 flex items-center justify-between gap-3">
         <a href="/" className="flex items-center gap-2.5">
           <BrandMark className="size-9" />
           <span className="font-brand text-[1.1rem] md:text-[1.2rem] leading-none">
             {brand.name}
           </span>
         </a>
-        <nav className="hidden md:flex items-center gap-6 text-[12px] font-semibold text-foreground/70">
+        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-foreground">
           <a href="#como" className="hover:text-foreground transition">Como funciona</a>
           <a href="#recursos" className="hover:text-foreground transition">Recursos</a>
           <a href="#planos" className="hover:text-foreground transition">Planos</a>
@@ -132,10 +132,9 @@ function Header({
           <Button variant="ghost" onClick={() => onCta("/entrar")} className="hidden sm:inline text-[15px] font-semibold px-4 py-2.5 rounded-lg text-foreground/80 hover:text-foreground">
             Entrar
           </Button>
-          <Button variant="ghost"
+          <Button
             onClick={() => onCta("#planos")}
-            className="text-[15px] font-bold px-5 py-3 rounded-lg text-primary-foreground btn-glow"
-            style={{ background: "var(--brand)" }}
+            className="lp-header-primary text-sm font-semibold px-6 py-3 rounded-sm"
           >
             Ver planos
           </Button>
@@ -150,7 +149,7 @@ function Header({
 function Hero({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#planos", plano?: string) => void }) {
   return (
     <section className="lp-hero px-5 md:px-8">
-      <div className="lp-hero-grid mx-auto max-w-7xl">
+      <div className="lp-hero-grid mx-auto">
         <div className="lp-hero-copy">
           <div className="editorial-eyebrow"><span /> WhatsApp · Inteligência artificial · CRM</div>
           <h1 className="lp-wordmark font-display">{brand.name}</h1>
@@ -160,7 +159,7 @@ function Hero({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#planos",
             <Button onClick={() => onCta("#planos")} className="rounded-sm px-6 h-12 font-semibold">Começar 3 dias grátis <ArrowRight className="size-4" /></Button>
             <Button variant="outline" onClick={() => onCta("/demo/dashboard")} className="rounded-sm px-5 h-12"><Play className="size-3.5" /> Ver demonstração</Button>
           </div>
-          <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
+          <ul className="lp-hero-checks mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
             <li className="flex items-center gap-1.5"><Check className="size-3 text-brand" /> 3 dias grátis</li>
             <li className="flex items-center gap-1.5"><Check className="size-3 text-brand" /> Conecta em 2 minutos</li>
             <li className="flex items-center gap-1.5"><Check className="size-3 text-brand" /> Cancele quando quiser</li>
@@ -178,7 +177,7 @@ function PhoneMock() {
 
       {/* phone */}
       <div
-        className="premium-phone relative w-[280px] sm:w-[320px] md:w-[350px] h-[550px] sm:h-[600px] md:h-[620px] rounded-[2.5rem] p-2.5"
+        className="premium-phone relative rounded-[2.5rem] p-2.5"
         style={{ background: "var(--lp-phone-shell)", border: "1px solid var(--lp-phone-shell-bd)" }}
       >
         <div
