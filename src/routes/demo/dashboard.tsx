@@ -46,7 +46,7 @@ function DemoDashboard() {
         <KpiCard icon={<Star className="size-4" />} label="CSAT médio" value={`${csatMedia}/5`} trend={`${demoCsat.length} avaliações`} />
       </div>
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-4">
-        <div className="rounded-lg border border-border bg-card p-5">
+        <div className="min-w-0 rounded-lg border border-border bg-card p-5">
           <h3 className="font-display text-[15px] font-semibold">Atendimentos · 14 dias</h3>
           <p className="text-xs text-muted-foreground mb-3">recebidas vs respondidas pela IA</p>
           <MiniAreaChart data={series} />
@@ -55,7 +55,7 @@ function DemoDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4">
-        <div className="rounded-lg border border-border bg-card p-5">
+        <div className="min-w-0 rounded-lg border border-border bg-card p-5">
           <h3 className="font-display text-[15px] font-semibold flex items-center gap-2">
             <Calendar className="size-4 text-[var(--brand-text)]" /> Próximos agendamentos
           </h3>
@@ -63,7 +63,7 @@ function DemoDashboard() {
           <div className="divide-y divide-border">
             {demoAgendamentos.map((a) => (
               <div key={a.id} className="py-3 flex items-center gap-3">
-                <div className="size-11 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-text)] grid place-items-center text-center font-display font-bold leading-none">
+                <div className="size-11 shrink-0 rounded-lg bg-brand-soft text-brand grid place-items-center text-center font-display font-bold leading-none">
                   <div>
                     <div className="text-[10px] uppercase tracking-wider">{a.quando.toLocaleDateString("pt-BR", { month: "short", timeZone: "America/Sao_Paulo" })}</div>
                     <div className="text-[14px] mt-0.5">{a.quando.getDate()}</div>
@@ -80,7 +80,7 @@ function DemoDashboard() {
             ))}
           </div>
         </div>
-        <div className="rounded-lg border border-border bg-card p-5">
+        <div className="min-w-0 rounded-lg border border-border bg-card p-5">
           <h3 className="font-display text-[15px] font-semibold">Últimas mensagens</h3>
           <p className="text-xs text-muted-foreground mb-2">atividade recente</p>
           <MessageTimeline items={last.slice(0, 6).map((m) => ({ id: m.id, nome: m.nome, autor: m.autor, texto: m.texto, quando: m.quando }))} />

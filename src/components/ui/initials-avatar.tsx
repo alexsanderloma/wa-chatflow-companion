@@ -25,18 +25,18 @@ export function InitialsAvatar({
   const fontSize = Math.max(11, Math.round(size * 0.38));
   const style =
     variant === "solid" && forceGradient
-      ? { width: size, height: size, background: forceGradient, fontSize, color: "#04140B" }
+      ? { width: size, height: size, background: forceGradient, fontSize, color: "var(--primary-foreground)" }
       : {
           width: size,
           height: size,
-          background: "rgba(37,211,102,.15)",
-          color: "#9af0bd",
+          background: "var(--brand-soft)",
+          color: "var(--brand-text)",
           fontSize,
         };
   return (
     <div
       className={cn(
-        "shrink-0 rounded-full grid place-items-center font-display font-semibold ring-1 ring-[rgba(37,211,102,.25)]",
+        "shrink-0 rounded-full grid place-items-center font-display font-semibold ring-1 ring-brand/20",
         className,
       )}
       style={style}

@@ -136,7 +136,13 @@
   --lp-final-bd: var(--brand-soft-strong);
   --lp-final-shadow: var(--shadow-card);
 }
-.dark { color-scheme: dark; }
+.dark {
+  color-scheme: dark;
+  --panel: oklch(0.18 0 0);
+  --panel-2: oklch(0.22 0 0);
+  --sidebar-bg: oklch(0.15 0 0);
+  --hairline: oklch(0.93 0.012 85 / .16);
+}
 html, body {
   background: var(--background);
   color: var(--foreground);
@@ -145,12 +151,14 @@ html, body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0; }
-h1 { font-size: 26px; font-weight: 700; }
-h2 { font-size: 20px; font-weight: 700; }
-h3 { font-size: 17px; font-weight: 600; }
-label, .label { font-size: 13.5px; font-weight: 600; }
-@layer base { * { border-color: var(--color-border); } }
+@layer base {
+  * { border-color: var(--color-border); }
+  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0; }
+  h1 { font-size: 26px; font-weight: 700; }
+  h2 { font-size: 20px; font-weight: 700; }
+  h3 { font-size: 17px; font-weight: 600; }
+  label, .label { font-size: 13.5px; font-weight: 600; }
+}
 @utility text-gradient-brand { color: var(--brand); }
 @utility bg-gradient-brand { background: var(--brand); }
 @utility glow-brand { box-shadow: var(--shadow-glow); }
@@ -165,6 +173,9 @@ label, .label { font-size: 13.5px; font-weight: 600; }
 .lp-root .font-display { font-weight: 600; letter-spacing: 0; }
 .lp-root .text-grad { color: var(--brand); }
 .lp-root .btn-glow { box-shadow: none; }
+.lp-root button { height: auto; min-height: 40px; white-space: normal; }
+.lp-root button[aria-label="Alternar tema"] { height: 40px; width: 40px; padding: 0; }
+.lp-root button:hover { opacity: .9; }
 .lp-root .glass, .lp-root .glass-strong { background: var(--panel); border: 1px solid var(--border); }
 .lp-root .glass-strong { border-color: var(--hairline-strong); }
 .lp-root .glass:hover, .lp-root .glass-strong:hover { border-color: var(--brand-soft-strong); }
