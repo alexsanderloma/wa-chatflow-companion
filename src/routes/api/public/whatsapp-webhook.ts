@@ -84,7 +84,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           if (media) text = crmTextFor(media, null);
 
           const insertedAt = new Date().toISOString();
-          const { data: inserted } = await (supabaseAdmin as any)
+          const { data: inserted, error: insertError } = await (supabaseAdmin as any)
             .from("mensagens")
             .insert({
               company_id: companyId,
@@ -99,6 +99,8 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             })
             .select("id, created_at")
             .maybeSingle();
+          // No automation without a durable source message (also needed for escalation deduplication).
+          if (insertError || !inserted?.id) return new Response("message-not-persisted", { status: 200 });
           const myCreatedAt = inserted?.created_at || insertedAt;
 
           // Dispara webhooks externos (best-effort, não bloqueia)
@@ -359,11 +361,27 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             console.error("[ai]", e?.message);
           }
 
-          const { parts, stage, agendar } = parseAiOutput(rawReply, stages.map((s) => ({ nome: s.nome, tipo: s.tipo })));
-          const finalParts = sanitizeAiParts(responderEmPartes ? parts : [parts.join(" ")]);
+          const { parts, stage, agendar, escalar } = parseAiOutput(rawReply, stages.map((s) => ({ nome: s.nome, tipo: s.tipo })));
+          const { escalationCustomerParts, hasUnmarkedHumanPromise, ESCALATION_FAILURE_REPLY } = await import("@/lib/human-escalation");
+          let finalParts = sanitizeAiParts(responderEmPartes ? parts : [parts.join(" ")]);
+          if (escalar) {
+            const { escalateToHuman } = await import("@/lib/human-escalation.server");
+            const result = await escalateToHuman(supabaseAdmin, instanceName, {
+              companyId, userId, sourceMessageId: whatsappMessageId || inserted.id,
+              numero: number, nome: cardRow?.nome || pushName || null,
+              motivo: escalar, ultimaMensagem: text,
+              responsavelNome: cfg?.responsavel_escalonamento_nome || "",
+              responsavelTelefone: cfg?.telefone_transferencia || "",
+            });
+            finalParts = escalationCustomerParts(finalParts, result);
+          } else if (hasUnmarkedHumanPromise(finalParts)) {
+            // Never convert free text into a notification: fail closed on a missing marker.
+            console.error("[escalation] model omitted required marker");
+            finalParts = [ESCALATION_FAILURE_REPLY];
+          }
 
           // Cria evento no Google Agenda se a IA marcou [AGENDAR: ...]
-          if (agendar && googleIntegration?.conectado) {
+          if (agendar && !escalar && googleIntegration?.conectado) {
             try {
               const { createCalendarEventForCompany } = await import("@/lib/google.server");
               await createCalendarEventForCompany(supabaseAdmin, companyId, {

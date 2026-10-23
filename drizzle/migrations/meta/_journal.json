@@ -29,6 +29,13 @@
       "when": 1792780642861,
       "tag": "0003_suppliers_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792783102424,
+      "tag": "0004_durable_human_escalations",
+      "breakpoints": true
     }
   ]
 }

@@ -115,6 +115,7 @@ export type Database = {
           reativar_cliente: boolean
           regiao_horario: string
           responder_em_partes: boolean
+          responsavel_escalonamento_nome: string
           segmento: string
           segundos_buffer: number
           servicos_agendaveis: string
@@ -178,6 +179,7 @@ export type Database = {
           reativar_cliente?: boolean
           regiao_horario?: string
           responder_em_partes?: boolean
+          responsavel_escalonamento_nome?: string
           segmento?: string
           segundos_buffer?: number
           servicos_agendaveis?: string
@@ -241,6 +243,7 @@ export type Database = {
           reativar_cliente?: boolean
           regiao_horario?: string
           responder_em_partes?: boolean
+          responsavel_escalonamento_nome?: string
           segmento?: string
           segundos_buffer?: number
           servicos_agendaveis?: string
@@ -1176,6 +1179,65 @@ export type Database = {
           },
         ]
       }
+      human_escalations: {
+        Row: {
+          company_id: string
+          contato_nome: string | null
+          contato_numero: string
+          created_at: string
+          erro: string | null
+          id: string
+          motivo: string
+          notified_at: string | null
+          responsavel_nome: string | null
+          responsavel_telefone: string | null
+          source_message_id: string
+          status: string
+          ultima_mensagem: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          contato_nome?: string | null
+          contato_numero: string
+          created_at?: string
+          erro?: string | null
+          id?: string
+          motivo: string
+          notified_at?: string | null
+          responsavel_nome?: string | null
+          responsavel_telefone?: string | null
+          source_message_id: string
+          status?: string
+          ultima_mensagem: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          contato_nome?: string | null
+          contato_numero?: string
+          created_at?: string
+          erro?: string | null
+          id?: string
+          motivo?: string
+          notified_at?: string | null
+          responsavel_nome?: string | null
+          responsavel_telefone?: string | null
+          source_message_id?: string
+          status?: string
+          ultima_mensagem?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "human_escalations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_evento: {
         Row: {
           card_id: string
@@ -1957,6 +2019,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_human_escalation: {
+        Args: {
+          _company_id: string
+          _motivo: string
+          _nome: string
+          _numero: string
+          _responsavel_nome: string
+          _responsavel_telefone: string
+          _source_message_id: string
+          _ultima_mensagem: string
+          _user_id: string
+        }
+        Returns: string
+      }
       claim_super_admin_if_empty: { Args: never; Returns: undefined }
       consume_ai_credit: {
         Args: { _company_id: string; _ref?: string }

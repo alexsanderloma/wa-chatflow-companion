@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Bot, Loader2, Save, Send, Sparkles, Plus, Trash2, Calendar, CheckCircle2, AlertCircle, LinkIcon } from "lucide-react";
 import { brand } from "@/config/brand";
 import { buildSystemPrompt } from "@/lib/ai-prompt";
+import { normalizeEscalationPhone } from "@/lib/human-escalation";
 import { testAiReply } from "@/lib/evolution.functions";
 import { startGoogleOAuth, disconnectGoogle } from "@/lib/google.functions";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
@@ -21,7 +22,7 @@ import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/app/agente/avancado")({
-  head: () => ({ meta: [{ title: `${brand.name} — Agente IA` }] }),
+  head: () => ({ meta: [{ title: `${brand.name} — Configuração avançada do agente` }, { name: "description", content: "Regras de atendimento e responsáveis por escalonamento humano da empresa." }, { property: "og:title", content: `${brand.name} — Configuração avançada do agente` }, { property: "og:description", content: "Configure regras e alertas de atendimento humano." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   beforeLoad: ({ context }: any) => {
     const r = context?.membership?.role;
     if (r === "atendente") throw redirect({ to: "/app/dashboard" });
@@ -37,7 +38,7 @@ const DEFAULTS: any = {
   estilo_comunicacao: "Humano, simpático, consultivo e direto.",
   sobre_empresa: "", produtos_servicos: "", pode_fazer: "",
   nao_pode_fazer: "Inventar preço, prazo ou política que não está no prompt.",
-  telefone_transferencia: "", palavra_pausar: "/pausar", palavra_despausar: "/despausar",
+  telefone_transferencia: "", responsavel_escalonamento_nome: "", palavra_pausar: "/pausar", palavra_despausar: "/despausar",
   segundos_buffer: 8, responder_em_partes: true,
   segmento: "", descricao_negocio: "", diferenciais: "", publico_alvo: "", regiao_horario: "",
   ofertas: "", cupom: "", como_vender: "", objecoes: "", formas_pagamento: "", ticket_medio: "",
@@ -148,10 +149,12 @@ function AgentePage() {
 
   async function save() {
     if (!companyId) return;
+    const normalizedPhone = cfg.telefone_transferencia.trim() ? normalizeEscalationPhone(cfg.telefone_transferencia) : "";
+    if (normalizedPhone === null) return toast.error("Informe um WhatsApp válido com DDD e código do país.");
     setSaving(true);
     const { user_id: _u, company_id: _c, updated_at: _ua, ...payload } = cfg;
     const { error } = await supabase.from("agent_config").upsert(
-      { company_id: companyId, user_id: ctx.user.id, ...payload }, { onConflict: "company_id" });
+      { company_id: companyId, user_id: ctx.user.id, ...payload, telefone_transferencia: normalizedPhone, responsavel_escalonamento_nome: (cfg.responsavel_escalonamento_nome || "").trim().slice(0, 100) }, { onConflict: "company_id" });
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Configuração salva");
@@ -545,10 +548,12 @@ function AgentePage() {
                   <Area label="O que NÃO pode fazer" value={cfg.nao_pode_fazer} onChange={(v) => up("nao_pode_fazer", v)} rows={4} />
                 </div>
                 <div className="grid sm:grid-cols-3 gap-3">
-                  <Field label="Telefone p/ transferência" value={cfg.telefone_transferencia} onChange={(v) => up("telefone_transferencia", v)} />
+                  <Field label="WhatsApp do responsável pelos alertas" value={cfg.telefone_transferencia} onChange={(v) => up("telefone_transferencia", v)} />
                   <Field label="Palavra para pausar" value={cfg.palavra_pausar} onChange={(v) => up("palavra_pausar", v)} />
                   <Field label="Palavra para despausar" value={cfg.palavra_despausar} onChange={(v) => up("palavra_despausar", v)} />
                 </div>
+                <Field label="Nome do responsável pelos alertas" value={cfg.responsavel_escalonamento_nome} onChange={(v) => up("responsavel_escalonamento_nome", v)} />
+                <p className="text-xs text-muted-foreground">Este contato recebe alertas quando a IA precisa de uma pessoa da empresa. Após o alerta, a IA fica pausada na conversa. O número não é mostrado ao cliente. Se o envio falhar, o chamado registra o erro e a IA permanece pausada.</p>
                 <SliderRow label="Esperar antes de responder (segundos)" v={cfg.segundos_buffer} max={20} on={(v) => up("segundos_buffer", v)} unit="s" />
                 <Toggle label="Responder em partes (1-3 bolhas)" v={cfg.responder_em_partes} on={(v) => up("responder_em_partes", v)} />
               </Section>

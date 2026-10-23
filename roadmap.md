@@ -1,5 +1,10 @@
 # FLOWA reference-led presentation replacement
 
+## Real human escalation
+- [x] Add durable tenant-isolated escalation, deterministic marker and notification-before-promise safeguards.
+- [x] Configure company-specific responsible contact and FLOWA Teste only; database readback confirmed Alex and the requested phone.
+- [x] Test parsing, concurrency/deduplication, failures and phone normalization; 37 tests passed and automatic build OK. Authenticated preview stayed on loading, so UI and real WhatsApp delivery remain unverified. No publish.
+
 - [x] Recompose the editorial landing and premium chat phone using the supplied reference.
 - [x] Recompose login with code-native terrain texture and a graphite form card; preserve auth handlers.
 - [x] Restyle narrow app/demo shells, compact analytics and existing CRM boards without changing data or controls.

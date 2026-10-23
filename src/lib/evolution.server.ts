@@ -147,10 +147,11 @@ export async function evoSetWebhook(instanceName: string, webhookUrl: string) {
   });
 }
 
-export async function evoSendText(instanceName: string, number: string, text: string) {
+export async function evoSendText(instanceName: string, number: string, text: string, timeoutMs?: number) {
   return evo(`/message/sendText/${encodeURIComponent(instanceName)}`, {
     method: "POST",
     json: { number, text },
+    ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
   });
 }
 
