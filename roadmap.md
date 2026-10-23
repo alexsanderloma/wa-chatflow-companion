@@ -1,5 +1,9 @@
 # FLOWA reference-led presentation replacement
 
+## Connection tab repair
+- [x] Fix stale status races, pairing lifecycle, loading and visible errors without changing Evolution or data.
+- [x] 10 focused tests passed; automatic build OK. Verified authenticated rendering and Atualizar; onboarding bypassed only in browser response for inspection. No real pairing/disconnect attempted; actual QR delivery remains unverified. No publish.
+
 ## Safe checkout upgrade
 - [x] Explicit upgrade navigation with real plan slug, current/selected plans and stable return path.
 - [x] Support-only upgrade fallback; matching-plan reuse and durable duplicate prevention for normal checkout.

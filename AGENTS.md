@@ -14,3 +14,4 @@
 - Scope reference-led presentation through landing, auth, workspace and CRM classes in the global stylesheet; decorative terrain is code-native and non-interactive to preserve functional flows.
 - Outbound customer integrations are a contract: webhook events are signed with the `X-Flowa-Signature` / `X-Flowa-Event` headers, and WhatsApp connection instances are named with the `flowa_` prefix. Changing either breaks live integrations, so rename them together with the docs in `MANUAL.md`.
 - WhatsApp connection is state-first and idempotent: query connectionState, create only when missing, call connect (QR) only from the explicit Connect action, never from status polling, because connect on a live session drops it.
+- Connection UI serializes status checks and invalidates stale responses across actions; pairing QR is retained only while connecting, and timed-out connect calls remain locked until their underlying request settles to prevent duplicate attempts.

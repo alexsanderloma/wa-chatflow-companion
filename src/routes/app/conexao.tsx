@@ -11,9 +11,18 @@ import { brand } from "@/config/brand";
 import { connectWhatsapp, checkWhatsappStatus, disconnectWhatsapp, diagnoseWhatsapp } from "@/lib/evolution.functions";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { PlanUsageBadge } from "@/components/plan-usage-badge";
+import { connectionRequests, connectionStatus, pairingView, type ConnectionStatus } from "@/lib/connection-ui";
+import { withTimeout } from "@/lib/auth-timeout";
 
 export const Route = createFileRoute("/app/conexao")({
-  head: () => ({ meta: [{ title: `${brand.name} — Conexão` }] }),
+  head: () => ({ meta: [
+    { title: `${brand.name} — Conexão WhatsApp` },
+    { name: "description", content: "Gerencie o pareamento e o status da sua linha WhatsApp no FLOWA." },
+    { property: "og:title", content: `${brand.name} — Conexão WhatsApp` },
+    { property: "og:description", content: "Gerencie o pareamento e o status da sua linha WhatsApp no FLOWA." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ConexaoPage,
 });
 
@@ -26,15 +35,22 @@ function ConexaoPage() {
 
   const [loading, setLoading] = useState(false);
   const [qr, setQr] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>("disconnected");
+  const [status, setStatus] = useState<ConnectionStatus>("unknown");
+  const [checking, setChecking] = useState(false);
+  const [pending, setPending] = useState(false);
   const [numero, setNumero] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [diag, setDiag] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const requests = useRef(connectionRequests());
+  const checkBusy = useRef(false);
+  const actionBusy = useRef(false);
+  const mounted = useRef(false);
 
   useEffect(() => {
+    mounted.current = true;
     void doCheck(true);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    return () => { mounted.current = false; requests.current.next(); checkBusy.current = false; stopPolling(); };
   }, []);
 
   function startPolling() {
@@ -47,51 +63,84 @@ function ConexaoPage() {
   }
 
   async function doCheck(silent = false) {
+    if (checkBusy.current || actionBusy.current) return;
+    checkBusy.current = true;
+    setChecking(true);
+    const request = requests.current.next();
     try {
-      const r: any = await check();
-      setStatus(r.status);
+      const r = await withTimeout(check(), 45_000);
+      if (!mounted.current || !requests.current.current(request)) return;
+      const next = connectionStatus(r.status);
+      if (next === "unknown") throw new Error("unknown_status");
+      setStatus(next);
       setNumero(r.numero ?? null);
-      if (r.status === "connected") { setQr(null); setProblem(null); stopPolling(); if (!silent) toast.success("WhatsApp conectado!"); }
-    } catch (e: any) { if (!silent) toast.error(e?.message || "Erro ao consultar status"); }
+      const view = pairingView(next, null);
+      if (next !== "connecting") setQr(view.qr);
+      if (view.poll) startPolling(); else stopPolling();
+      if (r.state === null && next !== "disconnected") {
+        setDiag("Não foi possível confirmar o estado agora. Mantivemos o último status conhecido; tente atualizar novamente.");
+      } else setDiag(null);
+      if (next === "connected") { setProblem(null); if (!silent) toast.success("WhatsApp conectado!"); }
+      if (next === "disconnected") setProblem((old) => old || "Sua linha está desconectada. Conecte novamente para gerar um QR Code válido.");
+    } catch {
+      if (mounted.current && requests.current.current(request)) {
+        setDiag("Não foi possível consultar a conexão. Tente atualizar novamente em instantes.");
+        if (!silent) toast.error("Não foi possível consultar a conexão. Tente novamente.");
+      }
+    } finally { checkBusy.current = false; if (mounted.current) setChecking(false); }
   }
 
   async function doConnect() {
+    if (actionBusy.current) return;
+    actionBusy.current = true;
+    stopPolling(); requests.current.next();
     setLoading(true); setQr(null); setProblem(null); setDiag(null);
     try {
-      const r = await connect();
+      const operation = connect();
+      void operation.finally(() => { actionBusy.current = false; if (mounted.current) setPending(false); }).catch(() => {});
+      const r = await withTimeout(operation, 90_000);
+      if (!mounted.current) return;
       if (r.diagnostic === "conectada") {
         setStatus("connected"); stopPolling(); toast.success("Já está conectado!");
+        void doCheck(true);
       } else if (r.qrBase64) {
         setQr(r.qrBase64); setStatus("connecting"); startPolling();
         toast.message("QR Code gerado. Escaneie no WhatsApp.");
       } else {
+        setStatus(connectionStatus(r.state === "connecting" ? "connecting" : "disconnected"));
         setProblem(r.message); toast.error(r.message);
       }
     } catch (e: any) {
-      const msg = e?.message || "Falha ao conectar. Tente novamente.";
+      const msg = actionBusy.current
+        ? "O servidor do WhatsApp está demorando. Aguarde a tentativa terminar antes de gerar outro QR Code."
+        : "Não foi possível conectar ao servidor do WhatsApp. Tente novamente em instantes.";
+      if (mounted.current) setPending(actionBusy.current);
       setProblem(msg); toast.error(msg);
     }
-    finally { setLoading(false); }
+    finally { if (mounted.current) setLoading(false); }
   }
 
   async function doDiagnose() {
-    try { const r = await diagnose(); setDiag(r.message); }
-    catch (e: any) { setDiag(e?.message || "Não foi possível executar o diagnóstico."); }
+    try { const r = await withTimeout(diagnose(), 45_000); if (mounted.current) setDiag(r.message); }
+    catch { if (mounted.current) setDiag("Não foi possível executar o diagnóstico. Tente novamente ou peça ao dono da empresa para verificar."); }
   }
 
   async function doDisconnect() {
+    if (actionBusy.current) return;
+    actionBusy.current = true; requests.current.next(); stopPolling();
     setLoading(true);
     try {
       await disconnect();
       setStatus("disconnected"); setNumero(null); setQr(null); stopPolling();
       toast.success("Desconectado");
     } catch (e: any) { toast.error(e?.message || "Falha ao desconectar"); }
-    finally { setLoading(false); }
+    finally { actionBusy.current = false; if (mounted.current) setLoading(false); }
   }
 
   const statusBadge =
-    status === "connected" ? <Badge className="bg-primary">Conectado</Badge>
-    : status === "connecting" ? <Badge variant="secondary" className="bg-amber-500/15 text-amber-700">Conectando…</Badge>
+    status === "unknown" ? <Badge variant="outline">{checking ? "Verificando…" : "Não confirmado"}</Badge>
+    : status === "connected" ? <Badge className="bg-success-soft text-success border-success/30">Conectado</Badge>
+    : status === "connecting" ? <Badge variant="secondary" className="text-warning">Conectando…</Badge>
     : <Badge variant="outline">Desconectado</Badge>;
 
   return (
@@ -116,16 +165,16 @@ function ConexaoPage() {
               {numero && <span className="text-sm text-muted-foreground">· {numero}</span>}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => doCheck()} disabled={loading}>
-              <RefreshCw className="size-4 mr-1.5" /> Atualizar
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => doCheck()} disabled={loading || checking || pending}>
+              <RefreshCw className={`size-4 mr-1.5 ${checking ? "animate-spin" : ""}`} /> Atualizar
             </Button>
             {status === "connected" ? (
               <Button variant="destructive" size="sm" onClick={doDisconnect} disabled={loading}>
                 <Power className="size-4 mr-1.5" /> Desconectar
               </Button>
             ) : (
-              <Button size="sm" onClick={doConnect} disabled={loading}>
+              <Button size="sm" onClick={doConnect} disabled={loading || pending || checking}>
                 {loading ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <QrCode className="size-4 mr-1.5" />}
                 {qr ? "Gerar novo QR" : "Conectar WhatsApp"}
               </Button>
@@ -135,8 +184,8 @@ function ConexaoPage() {
 
         {qr ? (
           <div className="grid md:grid-cols-2 gap-6 items-center">
-            <div className="bg-white p-4 rounded-xl border border-border w-fit mx-auto">
-              <img src={qr} alt="QR Code WhatsApp" className="size-72 object-contain" />
+            <div className="p-2 rounded-lg border border-border w-fit max-w-full mx-auto">
+              <img src={qr} alt="QR Code WhatsApp" className="w-72 max-w-full aspect-square object-contain" />
             </div>
             <div className="space-y-3 text-sm">
               <h3 className="font-semibold text-base">Como escanear</h3>
@@ -155,14 +204,15 @@ function ConexaoPage() {
           <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm space-y-3">
             <p>{problem}</p>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={doConnect} disabled={loading}><RefreshCw className="size-4 mr-1.5" />Tentar novamente</Button>
-              <Button size="sm" variant="outline" onClick={doDiagnose}>Diagnosticar</Button>
+               <Button size="sm" onClick={doConnect} disabled={loading || pending}><RefreshCw className="size-4 mr-1.5" />Tentar novamente</Button>
+               <Button size="sm" variant="outline" onClick={doDiagnose} disabled={loading || pending}>Diagnosticar</Button>
             </div>
-            {diag && <p className="text-muted-foreground">{diag}</p>}
           </div>
         ) : (
-          <div className="text-sm text-muted-foreground">Clique em <b>Conectar WhatsApp</b> para gerar o QR Code.</div>
+          <div className="text-sm text-muted-foreground">{status === "unknown" ? "Aguardando confirmação do estado da linha. Use Atualizar para consultar novamente." : status === "connecting" ? "A linha aguarda pareamento. Gere um novo QR Code se o anterior não estiver disponível." : <>Clique em <b>Conectar WhatsApp</b> para gerar o QR Code.</>}</div>
         )}
+        {loading && <p role="status" className="mt-4 text-sm text-muted-foreground">Aguardando o servidor do WhatsApp…</p>}
+        {diag && <p role="status" className="mt-4 text-sm text-warning">{diag}</p>}
       </Card>
     </div>
   );
