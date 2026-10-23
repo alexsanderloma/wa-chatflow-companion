@@ -67,22 +67,41 @@ async function applyEvent(evt: NormalizedBillingEvent) {
     payload: evt as any,
   };
 
-  if (!evt.buyerEmail) {
-    await supabase.from("billing_event_log").insert({ ...logRow, error: "sem email do comprador" });
-    return;
-  }
+  let companyId: string;
+  let planId: string | null = null;
 
-  const match = await findCompanyByEmail(supabase, evt.buyerEmail);
-  if (match.error !== undefined) {
-    const { error: logErr } = await supabase
-      .from("billing_event_log")
-      .insert({ ...logRow, error: match.error });
-    if (logErr) console.error("[billing.webhook] log", logErr.message);
-    return;
-  }
-  const companyId = match.companyId;
+  if (evt.provider === "asaas") {
+    // Asaas: a associação vem da externalReference 'flowa:<company>:<plan>' emitida
+    // pelo checkout. Sem referência válida, registra erro e não toca em nenhuma empresa.
+    if (!evt.flowaRef) {
+      const { error: logErr } = await supabase.from("billing_event_log").insert({
+        ...logRow,
+        error: "externalReference ausente ou inválida (esperado flowa:<company>:<plan>)",
+      });
+      if (logErr) console.error("[billing.webhook] log", logErr.message);
+      return;
+    }
+    companyId = evt.flowaRef.companyId;
+    planId = evt.flowaRef.planId;
+  } else {
+    // Demais provedores: fallback por e-mail, exigindo exatamente 1 empresa ativa.
+    if (!evt.buyerEmail) {
+      await supabase.from("billing_event_log").insert({ ...logRow, error: "sem email do comprador" });
+      return;
+    }
 
-  const planId = await findPlanByRef(supabase, evt.productRef);
+    const match = await findCompanyByEmail(supabase, evt.buyerEmail);
+    if (match.error !== undefined) {
+      const { error: logErr } = await supabase
+        .from("billing_event_log")
+        .insert({ ...logRow, error: match.error });
+      if (logErr) console.error("[billing.webhook] log", logErr.message);
+      return;
+    }
+    companyId = match.companyId;
+
+    planId = await findPlanByRef(supabase, evt.productRef);
+  }
 
   // Map status / billing
   let subStatus: string | null = null;
