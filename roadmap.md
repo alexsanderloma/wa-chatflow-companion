@@ -1,5 +1,9 @@
 # FLOWA reference-led presentation replacement
 
+## Connection tab repair
+- [ ] Fix stale status races, pairing lifecycle, loading and visible errors without changing Evolution or data.
+- [ ] Run focused tests and verify the connection UI without real pairing or disconnect operations.
+
 ## Safe checkout upgrade
 - [x] Explicit upgrade navigation with real plan slug, current/selected plans and stable return path.
 - [x] Support-only upgrade fallback; matching-plan reuse and durable duplicate prevention for normal checkout.
