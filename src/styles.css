@@ -285,6 +285,8 @@ html, body {
   .phone-composition { transform: rotate(5deg) scale(.85); }
   .phone-composition > .glass-strong { display: none; }
   .lp-stats > div { padding: 24px 14px; gap: 12px; }
+  .lp-stats > div { display: block; }
+  .lp-stats > div > div:last-child { max-width: none; margin-top: 8px; }
   .auth-form-pane { min-height: 100svh; }
 }
 @media (max-width: 767px) {
