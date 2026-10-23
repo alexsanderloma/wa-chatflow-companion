@@ -10,7 +10,7 @@ import {
   Loader2, ShieldCheck, ArrowLeft, Check, TrendingUp, Crown, Smartphone,
   Users, MessageSquare, Headphones, Calendar, BarChart3, Webhook, Zap, ExternalLink, Sparkles, Lock,
 } from "lucide-react";
-import { createCheckoutCompany } from "@/lib/checkout.functions";
+import { createCheckoutCompany, startAsaasCheckout } from "@/lib/checkout.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { trialDaysLeft } from "@/lib/tenant";
 
@@ -73,26 +73,19 @@ function featureIcon(text: string) {
 function normalizeFeatureText(text: string) {
   return /n[úu]meros? de whatsapp/i.test(text) ? "1 número de WhatsApp" : text;
 }
-function buildCheckoutUrl(base: string, email?: string | null, companyId?: string | null) {
-  try {
-    const u = new URL(base);
-    if (email) u.searchParams.set("email", email);
-    if (companyId) u.searchParams.set("ref", companyId);
-    return u.toString();
-  } catch {
-    return base;
-  }
-}
 
 function CheckoutPage() {
   const ctx = Route.useRouteContext();
   const navigate = useNavigate();
   const search = useSearch({ from: "/app/checkout" }) as Search;
   const createCompany = useServerFn(createCheckoutCompany);
+  const startCheckout = useServerFn(startAsaasCheckout);
 
   const [plans, setPlans] = useState<Plano[]>([]);
   const [selected, setSelected] = useState<string | null>(search.plano ?? null);
   const [creating, setCreating] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [waiting, setWaiting] = useState(false);
 
   // Modo: "trial" (sem empresa, oferecer teste grátis) vs "paywall" (empresa existe mas precisa pagar)
@@ -163,12 +156,17 @@ function CheckoutPage() {
 
   async function pagarAgora() {
     if (!plano) return toast.error("Selecione um plano.");
-    if (!plano.checkout_url) {
-      return toast.error("Este plano ainda não tem link de checkout configurado. Avise o administrador.");
+    setPaying(true);
+    try {
+      const res = await startCheckout({ data: { plano_slug: plano.slug } });
+      setPaymentUrl(res.paymentUrl);
+      window.open(res.paymentUrl, "_blank", "noopener,noreferrer");
+      setWaiting(true);
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao iniciar o pagamento");
+    } finally {
+      setPaying(false);
     }
-    const url = buildCheckoutUrl(plano.checkout_url, ctx.user.email, ctx.company?.id ?? null);
-    window.open(url, "_blank", "noopener,noreferrer");
-    setWaiting(true);
   }
 
   const headerBadge = paywallMode
@@ -202,11 +200,6 @@ function CheckoutPage() {
           <p className="text-muted-foreground mt-3 text-base md:text-lg">
             {headerSubtitle}
           </p>
-          {paywallMode && (
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-3 font-medium">
-              Importante: use o mesmo e-mail do cadastro (<span className="font-mono">{ctx.user.email}</span>) na hora de pagar — é assim que a gente libera seu acesso.
-            </p>
-          )}
         </div>
 
         {plans.length === 0 ? (
@@ -291,9 +284,9 @@ function CheckoutPage() {
                       A página de pagamento abriu em outra aba. Depois que o pagamento for aprovado, seu acesso é liberado aqui automaticamente
                       (pode levar alguns segundos).
                     </p>
-                    {plano?.checkout_url && (
+                    {paymentUrl && (
                       <a
-                        href={buildCheckoutUrl(plano.checkout_url, ctx.user.email, ctx.company?.id ?? null)}
+                        href={paymentUrl}
                         target="_blank" rel="noreferrer"
                         className="text-xs text-primary hover:underline inline-flex items-center gap-1"
                       >
@@ -309,16 +302,16 @@ function CheckoutPage() {
                     </div>
                     <p className="text-sm text-muted-foreground mb-5">
                       Plano selecionado: <span className="font-semibold text-foreground">{plano?.nome}</span> —{" "}
-                      {formatBRL(plano?.preco_cents ?? 0)}/mês. Pagamento por cartão, Pix ou boleto via Kiwify.
+                      {formatBRL(plano?.preco_cents ?? 0)}/mês. Pagamento por cartão, Pix ou boleto via Asaas.
                     </p>
                     <Button
                       onClick={pagarAgora}
-                      disabled={!plano || !plano?.checkout_url}
+                      disabled={!plano || paying}
                       size="lg"
                       className="w-full md:w-auto min-w-[280px] bg-gradient-brand text-primary-foreground hover:opacity-90 font-semibold"
                     >
-                      <ExternalLink className="size-4 mr-2" />
-                      {plano?.checkout_url ? `Assinar ${plano?.nome} agora` : "Plano sem checkout configurado"}
+                      {paying ? <Loader2 className="size-4 mr-2 animate-spin" /> : <ExternalLink className="size-4 mr-2" />}
+                      Assinar {plano?.nome} agora
                     </Button>
                   </>
                 ) : (
@@ -344,7 +337,7 @@ function CheckoutPage() {
                   </>
                 )}
                 <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <ShieldCheck className="size-3.5" /> Pagamento seguro processado pela Kiwify.
+                  <ShieldCheck className="size-3.5" /> Pagamento seguro processado pelo Asaas.
                 </div>
               </Card>
             </div>

@@ -1,7 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeAsaas, mapAsaasEvent } from "./normalize.ts";
+import { normalizeAsaas, mapAsaasEvent, parseFlowaReference, buildFlowaReference } from "./normalize.ts";
 import { isValidWebhookToken, extractWebhookToken, isAlreadyProcessed } from "./auth.ts";
+
+const COMPANY_ID = "65238820-b0e6-4939-aee7-641050586725";
+const PLAN_ID = "11111111-2222-3333-4444-555555555555";
 
 test("one-off received payment is purchase_approved", () => {
   const e = normalizeAsaas({ id: "evt_1", event: "PAYMENT_RECEIVED", payment: { id: "pay_1", customer: "cus_1", value: 97.5 } });
@@ -58,4 +61,42 @@ test("idempotency helper", () => {
   assert.equal(isAlreadyProcessed([{ processed: false }]), false);
   assert.equal(isAlreadyProcessed([]), false);
   assert.equal(isAlreadyProcessed(null), false);
+});
+
+test("flowa reference roundtrip and validation", () => {
+  const ref = buildFlowaReference(COMPANY_ID, PLAN_ID);
+  assert.equal(ref, `flowa:${COMPANY_ID}:${PLAN_ID}`);
+  assert.deepEqual(parseFlowaReference(ref), { companyId: COMPANY_ID, planId: PLAN_ID });
+  assert.deepEqual(parseFlowaReference(`flowa:${COMPANY_ID.toUpperCase()}:${PLAN_ID.toUpperCase()}`), {
+    companyId: COMPANY_ID,
+    planId: PLAN_ID,
+  });
+  assert.equal(parseFlowaReference("flowa:nao-e-uuid:123"), null);
+  assert.equal(parseFlowaReference(`flowa:${COMPANY_ID}`), null);
+  assert.equal(parseFlowaReference(`kiwify:${COMPANY_ID}:${PLAN_ID}`), null);
+  assert.equal(parseFlowaReference(""), null);
+  assert.equal(parseFlowaReference(null), null);
+  assert.equal(parseFlowaReference(undefined), null);
+});
+
+test("event with flowa reference and no email still resolves company and plan", () => {
+  const ref = buildFlowaReference(COMPANY_ID, PLAN_ID);
+  const e = normalizeAsaas({
+    id: "evt_ref",
+    event: "PAYMENT_CONFIRMED",
+    payment: { id: "pay_r", subscription: "sub_r", customer: "cus_r", externalReference: ref },
+  });
+  assert.equal(e.buyerEmail, null);
+  assert.deepEqual(e.flowaRef, { companyId: COMPANY_ID, planId: PLAN_ID });
+  assert.equal(e.externalSubscriptionId, "sub_r");
+});
+
+test("event with invalid reference has no flowaRef", () => {
+  const e = normalizeAsaas({
+    id: "evt_bad",
+    event: "PAYMENT_RECEIVED",
+    payment: { id: "pay_b", externalReference: "pedido-123" },
+  });
+  assert.equal(e.flowaRef, null);
+  assert.equal(e.productRef, "pedido-123");
 });
