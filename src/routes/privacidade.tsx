@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { brand, supportWhatsappUrl, supportWhatsappDisplay } from "@/config/brand";
 
 export const Route = createFileRoute("/privacidade")({
   head: () => ({
     meta: [
-      { title: "Política de Privacidade — ATENDE ZAP" },
-      { name: "description", content: "Como o ATENDE ZAP coleta, usa e protege seus dados." },
+      { title: `Política de Privacidade — ${brand.name}` },
+      { name: "description", content: `Como a ${brand.name} coleta, usa e protege seus dados.` },
+      { property: "og:title", content: `Política de Privacidade — ${brand.name}` },
+      { property: "og:description", content: `Como a ${brand.name} coleta, usa e protege seus dados.` },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PrivacidadePage,
@@ -22,7 +27,7 @@ function PrivacidadePage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900">1. Controlador dos dados</h2>
             <p className="mt-2">
-              <strong>ATENDE ZAP</strong> atua como controlador dos dados pessoais tratados
+              <strong>{brand.name}</strong> atua como controlador dos dados pessoais tratados
               no âmbito do Serviço, conforme a LGPD (Lei nº 13.709/2018) e demais leis
               aplicáveis.
             </p>
@@ -78,7 +83,7 @@ function PrivacidadePage() {
               Você pode solicitar acesso, correção, anonimização, portabilidade, eliminação
               dos seus dados, revogação de consentimento e informações sobre compartilhamento,
               nos termos da LGPD. Para exercer seus direitos, entre em contato pelos canais
-              do Serviço.
+              do Serviço pelo WhatsApp <a className="underline" href={supportWhatsappUrl} target="_blank" rel="noopener noreferrer">{supportWhatsappDisplay}</a>.
             </p>
           </section>
 

@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { brand, supportWhatsappUrl, supportWhatsappDisplay } from "@/config/brand";
 
 export const Route = createFileRoute("/reembolso")({
   head: () => ({
     meta: [
-      { title: "Política de Reembolso — ATENDE ZAP" },
-      { name: "description", content: "Garantia de 30 dias. Saiba como solicitar reembolso." },
+      { title: `Política de Reembolso — ${brand.name}` },
+      { name: "description", content: `Garantia de 30 dias da ${brand.name}. Saiba como solicitar reembolso.` },
+      { property: "og:title", content: `Política de Reembolso — ${brand.name}` },
+      { property: "og:description", content: `Garantia de 30 dias da ${brand.name}. Saiba como solicitar reembolso.` },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ReembolsoPage,
@@ -22,7 +27,7 @@ function ReembolsoPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900">Garantia de 30 dias</h2>
             <p className="mt-2">
-              O <strong>ATENDE ZAP</strong> oferece uma garantia de satisfação de
+              A <strong>{brand.name}</strong> oferece uma garantia de satisfação de
               <strong> 30 dias</strong>. Se você não estiver satisfeito com sua compra, pode
               solicitar reembolso integral em até 30 dias a partir da data do pedido.
             </p>
@@ -66,7 +71,7 @@ function ReembolsoPage() {
           <section>
             <h2 className="text-xl font-semibold text-slate-900">Contato</h2>
             <p className="mt-2">
-              Em caso de dúvidas, entre em contato com nosso suporte ou diretamente em
+              Em caso de dúvidas, entre em contato com nosso suporte pelo WhatsApp <a className="underline" href={supportWhatsappUrl} target="_blank" rel="noopener noreferrer">{supportWhatsappDisplay}</a> ou diretamente em
               paddle.net.
             </p>
           </section>

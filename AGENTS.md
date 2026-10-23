@@ -1,6 +1,6 @@
 # AGENTS.md
 
-- Brand identity (name, tagline, primary color, support contact) lives only in `src/config/brand.ts`; screens import `brand` instead of hardcoding the product name, so a rename touches one file.
+- Brand identity (name, tagline, primary color, support contact) lives only in `src/config/brand.ts`; screens and server-side support messages import the shared values instead of hardcoding product names or contacts, so a rename touches one file.
 - Use the shared code-native `BrandMark` for product identity and semantic theme tokens for frontend colors; tenant colors must not override product navigation, so branding stays consistent while connection states remain distinct.
 - Scope reference-led presentation through landing, auth, workspace and CRM classes in the global stylesheet; decorative terrain is code-native and non-interactive to preserve functional flows.
 - Outbound customer integrations are a contract: webhook events are signed with the `X-Flowa-Signature` / `X-Flowa-Event` headers, and WhatsApp connection instances are named with the `flowa_` prefix. Changing either breaks live integrations, so rename them together with the docs in `MANUAL.md`.
