@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 export function BrandMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className={cn("size-10 shrink-0 text-brand", className)}>
-      <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1" />
-      <path d="M17 35V19C17 14.5 20 12 25 12H33M17 24C21 21.5 25 21.5 30 22" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="24" cy="24" r="21.5" stroke="currentColor" strokeWidth=".85" />
+      <path d="M16.5 35.5C18 29 17.8 23 19 17.5C19.8 13.8 23.2 12.2 32.5 13M18.3 24C22.2 22.2 26 22 30 22.8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

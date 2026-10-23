@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   CheckCircle2,
 } from "lucide-react";
+import { BrandTerrain } from "@/components/brand-terrain";
 import { BrandMark } from "@/components/brand-mark";
 import { brand } from "@/config/brand";
 
@@ -142,10 +143,10 @@ function EntrarPage() {
   }
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden bg-background text-foreground">
-      <div className="relative z-10 min-h-screen grid lg:grid-cols-[1.05fr_1fr]">
+    <div className="auth-root min-h-screen w-full relative overflow-hidden bg-background text-foreground">
+      <div className="relative z-10 min-h-screen grid lg:grid-cols-[1fr_1fr]">
         {/* LEFT — brand pane (hidden on mobile) */}
-        <aside className="hidden lg:flex flex-col justify-between p-10 xl:p-14 border-r border-[color:var(--hairline)] bg-card">
+        <aside className="auth-brand-pane hidden lg:flex flex-col justify-between p-10 xl:p-14 border-r border-border bg-background">
           <div className="flex items-center gap-3">
             <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="size-4" />
@@ -153,23 +154,22 @@ function EntrarPage() {
             </Link>
           </div>
 
-          <div className="space-y-8 max-w-lg">
+          <BrandTerrain />
+          <div className="auth-brand-content space-y-7 max-w-lg">
             <div className="flex items-center gap-3">
               <BrandMark className="size-12" />
               <div>
-                <div className="font-display font-extrabold text-2xl text-foreground leading-none">{brand.name}</div>
+                <div className="font-display font-medium text-xl text-foreground leading-none">{brand.name}</div>
                 <div className="text-[12px] text-muted-foreground mt-1">{brand.tagline}</div>
               </div>
             </div>
 
-            <h1 className="font-display text-4xl xl:text-5xl font-extrabold leading-[1.05] ">
-              Sua IA atende o<br />
-              <span className="text-gradient-brand">WhatsApp 24h</span> e<br />
-              organiza o CRM sozinha.
+            <h1 className="font-display text-4xl xl:text-[44px] font-normal leading-[1.18]">
+              Relacionamentos<br />que viram<br /><span className="text-brand">resultado.</span>
             </h1>
 
             <p className="text-[15px] text-muted-foreground leading-relaxed">
-              Conecte seu número em 2 minutos. A gente cuida do resto — respostas, qualificação e movimentação dos leads no funil, no automático.
+              IA no WhatsApp 24/7, CRM Kanban e toda a jornada do seu cliente em um só lugar.
             </p>
 
             <div className="grid gap-3">
@@ -191,7 +191,7 @@ function EntrarPage() {
         </aside>
 
         {/* RIGHT — form */}
-        <main className="flex flex-col items-center justify-center px-5 py-10 sm:px-10">
+        <main className="auth-form-pane flex flex-col items-center justify-center px-5 py-10 sm:px-10">
           {/* Mobile brand header */}
           <div className="lg:hidden w-full max-w-md mb-6 flex items-center justify-between">
             <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -204,7 +204,7 @@ function EntrarPage() {
           </div>
 
           <div className="w-full max-w-md">
-            <div className="relative py-7 sm:py-8">
+            <div className="auth-form-card relative p-6 sm:p-9">
               <div className="relative">
                 {planInfo && (
                   <div className="mb-5 rounded-lg border border-[color:var(--brand)]/30 bg-[color:var(--brand-soft)] p-4">
@@ -219,13 +219,13 @@ function EntrarPage() {
                   </div>
                 )}
 
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[color:var(--brand-soft)] border border-[color:var(--brand)]/20 text-[11px] font-semibold text-[color:var(--brand-text)] mb-3">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-[color:var(--brand-soft)] border border-[color:var(--brand)]/20 text-[11px] font-semibold text-[color:var(--brand-text)] mb-3">
                   <span className="size-1.5 rounded-full bg-[color:var(--brand)] dot-pulse" />
                   {needsPassword ? "Acesso à conta" : "Cadastro em 1 clique"}
                 </div>
 
-                <h1 className="font-display text-[26px] sm:text-[28px] font-extrabold leading-tight ">
-                  {needsPassword ? "Bem-vindo de volta" : "Comece em 1 clique"}
+                <h1 className="font-display text-[24px] sm:text-[26px] font-medium leading-tight ">
+                  {needsPassword ? "Entrar na sua conta" : "Comece em 1 clique"}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1.5 mb-6">
                   {needsPassword

@@ -106,14 +106,14 @@ function Header({
 }) {
   return (
     <header className="lp-header sticky top-0 z-50 backdrop-blur-xl">
-      <div className="mx-auto max-w-7xl px-4 sm:px-5 md:px-8 h-[4.5rem] md:h-20 flex items-center justify-between gap-3">
+      <div className="mx-auto max-w-7xl px-4 sm:px-5 md:px-8 h-16 md:h-[72px] flex items-center justify-between gap-3">
         <a href="/" className="flex items-center gap-2.5">
-          <BrandMark className="size-11" />
-          <span className="font-brand text-[1.5rem] md:text-[1.7rem] leading-none">
+          <BrandMark className="size-9" />
+          <span className="font-brand text-[1.1rem] md:text-[1.2rem] leading-none">
             {brand.name}
           </span>
         </a>
-        <nav className="hidden md:flex items-center gap-8 text-[15px] font-semibold text-foreground/70">
+        <nav className="hidden md:flex items-center gap-6 text-[12px] font-semibold text-foreground/70">
           <a href="#como" className="hover:text-foreground transition">Como funciona</a>
           <a href="#recursos" className="hover:text-foreground transition">Recursos</a>
           <a href="#planos" className="hover:text-foreground transition">Planos</a>
@@ -149,52 +149,24 @@ function Header({
 /* ===================== HERO ===================== */
 function Hero({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#planos", plano?: string) => void }) {
   return (
-    <section className="relative px-4 sm:px-6 md:px-8 pt-12 md:pt-16 pb-12 md:pb-16">
-      
-      <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-10 md:gap-16 items-center relative">
-        <div className="text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 text-[13px] px-3.5 py-1.5 rounded-full glass">
-            <span className="relative inline-block size-2 rounded-full bg-success dot-pulse" />
-            <span className="text-foreground/80 font-semibold">WhatsApp + IA + CRM no automático</span>
+    <section className="lp-hero px-5 md:px-8">
+      <div className="lp-hero-grid mx-auto max-w-7xl">
+        <div className="lp-hero-copy">
+          <div className="editorial-eyebrow"><span /> WhatsApp · Inteligência artificial · CRM</div>
+          <h1 className="lp-wordmark font-display">{brand.name}</h1>
+          <h2 className="lp-offer font-display">IA que atende seu<br className="hidden sm:block" /> WhatsApp <span className="text-brand">24/7</span><br /> + CRM Kanban.</h2>
+          <p className="lp-hero-description">Conecte seu número, treine o agente em uma tela e veja cada lead ser respondido na hora, qualificado e movido no funil — sem você levantar o dedo.</p>
+          <div className="lp-hero-actions flex flex-wrap gap-3">
+            <Button onClick={() => onCta("#planos")} className="rounded-sm px-6 h-12 font-semibold">Começar 3 dias grátis <ArrowRight className="size-4" /></Button>
+            <Button variant="outline" onClick={() => onCta("/demo/dashboard")} className="rounded-sm px-5 h-12"><Play className="size-3.5" /> Ver demonstração</Button>
           </div>
-
-          <h1 className="font-display text-6xl sm:text-7xl lg:text-8xl leading-none mt-6 font-semibold">
-            {brand.name}
-          </h1>
-
-          <p className="mt-5 text-xl sm:text-2xl text-foreground leading-snug">IA atende WhatsApp <span className="text-brand">24/7</span> + CRM Kanban.</p>
-          <p className="mt-6 text-[17px] sm:text-xl text-foreground/70 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-            Conecte seu número, treine o agente em uma tela e veja cada lead ser respondido na hora,
-            qualificado e movido no funil — sem você levantar o dedo.
-          </p>
-
-          <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-3 justify-center lg:justify-start">
-            <Button variant="ghost"
-              onClick={() => onCta("#planos")}
-              className="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-lg text-primary-foreground font-bold text-[16px] btn-glow"
-              style={{ background: "var(--brand)" }}
-            >
-              Começar 3 dias grátis
-              <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
-            </Button>
-            <Button variant="ghost"
-              onClick={() => onCta("/demo/dashboard")}
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-lg glass-strong text-foreground/90 hover:bg-foreground/10 transition text-[16px] font-semibold cursor-pointer"
-            >
-              <Play className="size-4" /> Ver demonstração
-            </Button>
-          </div>
-
-          <ul className="mt-7 flex flex-wrap justify-center lg:justify-start gap-x-5 gap-y-2 text-sm text-foreground/65 font-medium">
-            <li className="flex items-center gap-1.5"><Check className="size-4 text-brand" /> 3 dias grátis</li>
-            <li className="flex items-center gap-1.5"><Check className="size-4 text-brand" /> Conecta em 2 minutos</li>
-            <li className="flex items-center gap-1.5"><Check className="size-4 text-brand" /> Cancele quando quiser</li>
+          <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
+            <li className="flex items-center gap-1.5"><Check className="size-3 text-brand" /> 3 dias grátis</li>
+            <li className="flex items-center gap-1.5"><Check className="size-3 text-brand" /> Conecta em 2 minutos</li>
+            <li className="flex items-center gap-1.5"><Check className="size-3 text-brand" /> Cancele quando quiser</li>
           </ul>
         </div>
-
-        <div className="relative flex justify-center lg:justify-end">
-          <PhoneMock />
-        </div>
+        <div className="lp-phone-stage"><PhoneMock /></div>
       </div>
     </section>
   );
@@ -202,11 +174,11 @@ function Hero({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#planos",
 
 function PhoneMock() {
   return (
-    <div className="relative ">
+    <div className="phone-composition relative">
 
       {/* phone */}
       <div
-        className="relative w-[270px] sm:w-[320px] md:w-[340px] h-[560px] sm:h-[620px] md:h-[640px] rounded-[2.5rem] p-3 shadow-2xl"
+        className="premium-phone relative w-[280px] sm:w-[320px] md:w-[350px] h-[550px] sm:h-[600px] md:h-[620px] rounded-[2.5rem] p-2.5"
         style={{ background: "var(--lp-phone-shell)", border: "1px solid var(--lp-phone-shell-bd)" }}
       >
         <div
@@ -255,7 +227,7 @@ function PhoneMock() {
 
 
       {/* floating CRM card — escondido em telas muito pequenas pra não estourar */}
-      <div className="hidden sm:block absolute -left-10 sm:-left-16 bottom-20 glass-strong rounded-lg p-3.5 w-[220px] shadow-2xl " style={{ animationDelay: "1.5s" }}>
+      <div className="hidden sm:block absolute -left-14 bottom-16 glass-strong rounded-lg p-3.5 w-[220px] shadow-2xl " style={{ animationDelay: "1.5s" }}>
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-foreground/50 font-semibold">
           <KanbanSquare className="size-3 text-brand" />
           CRM atualizado
@@ -273,7 +245,7 @@ function PhoneMock() {
       </div>
 
       {/* floating badge top */}
-      <div className="hidden sm:flex absolute -right-6 sm:-right-10 top-12 glass-strong rounded-lg px-3 py-2 items-center gap-2 shadow-2xl " style={{ animationDelay: "3s" }}>
+      <div className="hidden sm:flex absolute -right-3 top-16 glass-strong rounded-lg px-3 py-2 items-center gap-2 shadow-2xl " style={{ animationDelay: "3s" }}>
         <span className="size-2 rounded-full bg-success dot-pulse relative" />
         <span className="text-xs font-medium">Lead respondido</span>
       </div>
@@ -313,11 +285,11 @@ function Stats() {
     { n: "0", l: "lead esquecido" },
   ];
   return (
-    <section className="px-5 md:px-8 py-12 md:py-16">
+    <section className="lp-data-band px-5 md:px-8">
       <div className="mx-auto max-w-6xl lp-stats grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border/10 reveal" data-reveal>
         {items.map((it) => (
-          <div key={it.l} className="px-6 py-8 text-center">
-            <div className="font-display text-4xl md:text-5xl text-grad">{it.n}</div>
+          <div key={it.l} className="px-6 py-6 text-left">
+            <div className="font-display text-3xl md:text-4xl text-grad">{it.n}</div>
             <div className="text-[11px] uppercase tracking-[0.18em] text-foreground/55 mt-2 font-semibold">{it.l}</div>
           </div>
         ))}
@@ -329,7 +301,7 @@ function Stats() {
 /* ===================== PAIN ===================== */
 function Pain() {
   return (
-    <section className="px-5 md:px-8 py-24 md:py-28">
+    <section className="px-5 md:px-8 py-16 md:py-20">
       <div className="mx-auto max-w-3xl text-center reveal" data-reveal>
         <h2 className="font-display text-4xl md:text-5xl leading-[1.02] tracking-normal">
           Lead que espera, lead que <span className="text-grad">compra do concorrente</span>.
@@ -367,14 +339,14 @@ function HowItWorks() {
     },
   ];
   return (
-    <section id="como" className="px-5 md:px-8 py-24 md:py-28">
+    <section id="como" className="px-5 md:px-8 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionTitle eyebrow="Como funciona" title={<>Em 3 passos. <span className="text-grad">Sério.</span></>} />
         <div className="mt-12 grid md:grid-cols-3 gap-5">
           {steps.map((s) => (
-            <div key={s.n} className="glass border-sheen rounded-lg p-7 relative reveal" data-reveal>
+            <div key={s.n} className="editorial-step relative reveal" data-reveal>
               <div className="font-display text-5xl text-foreground/10 absolute right-5 top-4">{s.n}</div>
-              <div className="size-11 rounded-lg grid place-items-center" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
+              <div className="size-9 rounded-lg grid place-items-center" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
                 {s.icon}
               </div>
               <h3 className="font-display text-xl mt-4">{s.t}</h3>
@@ -398,13 +370,13 @@ function Features() {
     { t: "Relatórios que mostram o dinheiro", d: "Tempo de resposta, conversão, taxa de ganho. Decisão em segundos.", icon: <LineChart className="size-5" /> },
   ];
   return (
-    <section id="recursos" className="px-5 md:px-8 py-24 md:py-28">
+    <section id="recursos" className="px-5 md:px-8 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionTitle eyebrow="Recursos" title={<>Tudo que você precisa pra <span className="text-grad">parar de perder venda</span>.</>} />
         <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((it) => (
-            <div key={it.t} className="glass border-sheen rounded-lg p-6 hover:-translate-y-1 transition-transform reveal" data-reveal>
-              <div className="size-11 rounded-lg grid place-items-center" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
+            <div key={it.t} className="editorial-feature reveal" data-reveal>
+              <div className="size-9 rounded-lg grid place-items-center" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
                 {it.icon}
               </div>
               <h3 className="font-display text-lg mt-4">{it.t}</h3>
@@ -471,7 +443,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#plano
     },
   ];
   return (
-    <section id="planos" className="px-5 md:px-8 py-24 md:py-28">
+    <section id="planos" className="px-5 md:px-8 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionTitle eyebrow="Planos" title={<>Quanto mais <span className="text-grad">cresce</span>, mais <span className="text-grad">economiza</span>.</>} />
         <p className="text-center text-foreground/55 max-w-2xl mx-auto mt-4 text-[15px]">Todos os planos têm 3 dias grátis. Cancele antes do fim do trial e não é cobrado.</p>
@@ -539,12 +511,12 @@ function Testimonials() {
     },
   ];
   return (
-    <section className="px-5 md:px-8 py-24 md:py-28">
+    <section className="px-5 md:px-8 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionTitle eyebrow="Quem usa" title={<>Times que pararam de perder venda <span className="text-grad">no 'oi, sumiu'</span>.</>} />
         <div className="mt-12 grid md:grid-cols-3 gap-5">
           {items.map((it) => (
-            <div key={it.n} className="glass border-sheen rounded-lg p-6 reveal" data-reveal>
+            <div key={it.n} className="editorial-quote reveal" data-reveal>
               <div className="flex gap-1 text-brand">
                 {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-4 fill-current" />)}
               </div>
@@ -580,14 +552,14 @@ function Faq() {
   ];
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <section id="faq" className="px-5 md:px-8 py-24 md:py-28">
+    <section id="faq" className="px-5 md:px-8 py-16 md:py-20">
       <div className="mx-auto max-w-3xl">
         <SectionTitle eyebrow="Dúvidas" title={<>Antes de você perguntar.</>} />
         <div className="mt-10 space-y-3">
           {items.map((it, i) => {
             const isOpen = open === i;
             return (
-              <div key={it.q} className="glass border-sheen rounded-lg overflow-hidden reveal" data-reveal>
+              <div key={it.q} className="editorial-faq overflow-hidden reveal" data-reveal>
                 <Button variant="ghost" onClick={() => setOpen(isOpen ? null : i)} className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left">
                   <span className="font-semibold">{it.q}</span>
                   <span className="size-7 grid place-items-center rounded-full shrink-0" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
@@ -652,7 +624,7 @@ function Footer() {
         <div className="grid gap-10 md:gap-8 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
-              <BrandMark className="size-11" />
+              <BrandMark className="size-9" />
               <span className="font-brand text-[1.4rem] leading-none">{brand.name}</span>
             </div>
             <p className="mt-4 text-sm text-foreground/55 leading-relaxed max-w-xs">
@@ -698,13 +670,13 @@ function Footer() {
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: React.ReactNode; center?: boolean }) {
   // Padronizado: sempre centralizado, maior, com eyebrow em destaque.
   return (
-    <div className="reveal text-center" data-reveal>
+    <div className="section-heading reveal text-left" data-reveal>
       <div className="inline-flex items-center justify-center gap-3 text-[11px] uppercase tracking-[0.28em] text-brand font-bold">
         <span className="h-px w-10 bg-brand/60" />
         {eyebrow}
         <span className="h-px w-10 bg-brand/60" />
       </div>
-      <h2 className="font-display text-3xl md:text-5xl font-black leading-[0.98] tracking-normal mt-5 max-w-4xl mx-auto">
+      <h2 className="font-display text-3xl md:text-4xl font-medium leading-tight tracking-normal mt-4 max-w-3xl">
         {title}
       </h2>
     </div>

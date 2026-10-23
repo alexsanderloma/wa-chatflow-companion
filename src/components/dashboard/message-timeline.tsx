@@ -15,17 +15,17 @@ export function MessageTimeline({ items, empty }: { items: TimelineItem[]; empty
   return (
     <ul>
       {items.map((m) => (
-        <li key={m.id} className="flex gap-3 py-4 border-b border-border last:border-b-0">
-          <InitialsAvatar name={m.nome} size={40} />
+        <li key={m.id} className="flex gap-3 py-3 border-b border-border last:border-b-0">
+          <InitialsAvatar name={m.nome} size={32} />
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] sm:text-[15px]">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] sm:text-[13px]">
               <b className="truncate font-semibold">{m.nome}</b>
               <AuthorBadge autor={m.autor} />
               <span className="ml-auto text-[12px] text-muted-foreground whitespace-nowrap">
                 {m.quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
               </span>
             </div>
-            <p className="text-foreground/70 text-[14px] mt-1 truncate">{m.texto}</p>
+            <p className="text-foreground/70 text-[12px] mt-1 truncate">{m.texto}</p>
           </div>
         </li>
       ))}
