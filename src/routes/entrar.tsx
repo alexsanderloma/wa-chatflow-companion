@@ -218,7 +218,7 @@ function EntrarPage() {
 
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-[color:var(--brand-soft)] border border-[color:var(--brand)]/20 text-[11px] font-semibold text-[color:var(--brand-text)] mb-3">
                   <span className="size-1.5 rounded-full bg-[color:var(--brand)] dot-pulse" />
-                  {needsPassword ? "Acesso à conta" : "Cadastro em 1 clique"}
+                  {needsPassword ? "Acesso à conta" : "Nova conta"}
                 </div>
 
                 <h1 className="font-display text-[24px] sm:text-[26px] font-medium leading-tight ">
