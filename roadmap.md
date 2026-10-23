@@ -1,5 +1,10 @@
 # FLOWA reference-led presentation replacement
 
+## Real human escalation
+- [ ] Add durable tenant-isolated escalation, deterministic marker and notification-before-promise safeguards.
+- [ ] Configure company-specific responsible contact and FLOWA Teste only.
+- [ ] Test parsing, concurrency/deduplication, failures and phone normalization; verify preview and automatic checks. No publish.
+
 - [x] Recompose the editorial landing and premium chat phone using the supplied reference.
 - [x] Recompose login with code-native terrain texture and a graphite form card; preserve auth handlers.
 - [x] Restyle narrow app/demo shells, compact analytics and existing CRM boards without changing data or controls.
