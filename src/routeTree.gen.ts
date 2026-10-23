@@ -31,6 +31,7 @@ import { Route as AppCrmRouteImport } from './routes/app/crm'
 import { Route as AppDashboardRouteImport } from './routes/app/dashboard'
 import { Route as AppEquipeRouteImport } from './routes/app/equipe'
 import { Route as AppFinanceiroRouteImport } from './routes/app/financeiro'
+import { Route as AppFornecedoresRouteImport } from './routes/app/fornecedores'
 import { Route as AppIntegracoesRouteImport } from './routes/app/integracoes'
 import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
 import { Route as AppRelatoriosRouteImport } from './routes/app/relatorios'
@@ -173,6 +174,11 @@ const AppEquipeRoute = AppEquipeRouteImport.update({
 const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
+  id: '/fornecedores',
+  path: '/fornecedores',
   getParentRoute: () => AppRoute,
 } as any)
 const AppIntegracoesRoute = AppIntegracoesRouteImport.update({
@@ -366,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/equipe': typeof AppEquipeRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/integracoes': typeof AppIntegracoesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/relatorios': typeof AppRelatoriosRoute
@@ -421,6 +428,7 @@ export interface FileRoutesByTo {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/equipe': typeof AppEquipeRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/integracoes': typeof AppIntegracoesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/relatorios': typeof AppRelatoriosRoute
@@ -479,6 +487,7 @@ export interface FileRoutesById {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/equipe': typeof AppEquipeRoute
   '/app/financeiro': typeof AppFinanceiroRoute
+  '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/integracoes': typeof AppIntegracoesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/relatorios': typeof AppRelatoriosRoute
@@ -538,6 +547,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/equipe'
     | '/app/financeiro'
+    | '/app/fornecedores'
     | '/app/integracoes'
     | '/app/onboarding'
     | '/app/relatorios'
@@ -593,6 +603,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/equipe'
     | '/app/financeiro'
+    | '/app/fornecedores'
     | '/app/integracoes'
     | '/app/onboarding'
     | '/app/relatorios'
@@ -650,6 +661,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/equipe'
     | '/app/financeiro'
+    | '/app/fornecedores'
     | '/app/integracoes'
     | '/app/onboarding'
     | '/app/relatorios'
@@ -861,6 +873,13 @@ declare module '@tanstack/react-router' {
       path: '/financeiro'
       fullPath: '/app/financeiro'
       preLoaderRoute: typeof AppFinanceiroRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/fornecedores': {
+      id: '/app/fornecedores'
+      path: '/fornecedores'
+      fullPath: '/app/fornecedores'
+      preLoaderRoute: typeof AppFornecedoresRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/integracoes': {
@@ -1121,6 +1140,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppEquipeRoute: typeof AppEquipeRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
+  AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppIntegracoesRoute: typeof AppIntegracoesRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
@@ -1138,6 +1158,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppEquipeRoute: AppEquipeRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
+  AppFornecedoresRoute: AppFornecedoresRoute,
   AppIntegracoesRoute: AppIntegracoesRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
