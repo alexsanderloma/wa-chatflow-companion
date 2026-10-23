@@ -47,10 +47,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  async function cta(path: "/entrar" | "/demo/dashboard" | "#planos", plano: string = "pro") {
+  async function cta(path: "/entrar" | "/login" | "/demo/dashboard" | "#planos", plano: string = "pro") {
     if (path === "#planos") {
       const el = document.getElementById("planos");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (path === "/login") {
+      window.location.href = "/entrar";
       return;
     }
     if (path === "/entrar") {
@@ -100,7 +104,7 @@ function Header({
   isDark,
   onToggleTheme,
 }: {
-  onCta: (p: "/entrar" | "/demo/dashboard" | "#planos", plano?: string) => void;
+  onCta: (p: "/entrar" | "/login" | "/demo/dashboard" | "#planos", plano?: string) => void;
   isDark: boolean;
   onToggleTheme: () => void;
 }) {
@@ -129,8 +133,11 @@ function Header({
           >
             {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </Button>
-          <Button variant="ghost" onClick={() => onCta("/entrar")} className="hidden sm:inline text-[15px] font-semibold px-4 py-2.5 rounded-lg text-foreground/80 hover:text-foreground">
+          <Button variant="ghost" onClick={() => onCta("/login")} className="text-[15px] font-semibold px-4 py-2.5 rounded-lg text-foreground/80 hover:text-foreground">
             Entrar
+          </Button>
+          <Button variant="outline" onClick={() => onCta("/entrar")} className="hidden md:inline-flex text-sm font-semibold px-5 py-3 rounded-sm">
+            Criar conta
           </Button>
           <Button
             onClick={() => onCta("#planos")}
@@ -146,7 +153,7 @@ function Header({
 
 
 /* ===================== HERO ===================== */
-function Hero({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#planos", plano?: string) => void }) {
+function Hero({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard" | "#planos", plano?: string) => void }) {
   return (
     <section className="lp-hero px-5 md:px-8">
       <div className="lp-hero-grid mx-auto">
@@ -389,7 +396,7 @@ function Features() {
 }
 
 /* ===================== PRICING ===================== */
-function Pricing({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#planos", plano?: string) => void }) {
+function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard" | "#planos", plano?: string) => void }) {
   const plans = [
     {
       slug: "starter",
@@ -576,7 +583,7 @@ function Faq() {
 }
 
 /* ===================== FINAL CTA ===================== */
-function FinalCta({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#planos", plano?: string) => void }) {
+function FinalCta({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard" | "#planos", plano?: string) => void }) {
   return (
     <section className="px-4 sm:px-5 md:px-8 py-20 md:py-28">
       <div
