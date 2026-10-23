@@ -295,6 +295,10 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           if (!messages.length || messages[messages.length - 1].role !== "user") {
             messages.push({ role: "user", content: text });
           }
+          if (aiUserText) {
+            // A última fala do contato é a mídia: entrega descrição/transcrição real (ou aviso honesto).
+            messages[messages.length - 1] = { role: "user", content: aiUserText };
+          }
 
           // Enforcement de créditos: cada resposta da IA consome 1 crédito.
           // Se zerou, a IA não responde — exige assinatura/recarga.
