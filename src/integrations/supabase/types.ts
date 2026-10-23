@@ -90,6 +90,7 @@ export type Database = {
           formas_pagamento: string
           horarios_atendimento: Json
           horarios_disponiveis: string
+          id: string
           idioma: string | null
           mensagem_fora_horario: string
           nao_pode_fazer: string
@@ -152,6 +153,7 @@ export type Database = {
           formas_pagamento?: string
           horarios_atendimento?: Json
           horarios_disponiveis?: string
+          id?: string
           idioma?: string | null
           mensagem_fora_horario?: string
           nao_pode_fazer?: string
@@ -214,6 +216,7 @@ export type Database = {
           formas_pagamento?: string
           horarios_atendimento?: Json
           horarios_disponiveis?: string
+          id?: string
           idioma?: string | null
           mensagem_fora_horario?: string
           nao_pode_fazer?: string
@@ -1743,6 +1746,20 @@ export type Database = {
       consume_ai_credit: {
         Args: { _company_id: string; _ref?: string }
         Returns: boolean
+      }
+      create_company_with_owner: {
+        Args: {
+          _forcar_troca_senha?: boolean
+          _nome: string
+          _owner_id: string
+          _plan_id: string
+          _slug: string
+        }
+        Returns: {
+          company_id: string
+          trial_ate: string
+          trial_days: number
+        }[]
       }
       current_company_id: { Args: never; Returns: string }
       fin_enable_for_company: {

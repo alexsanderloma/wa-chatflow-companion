@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792757185825,
+      "tag": "0000_atomic_company_and_agent_config_pk",
+      "breakpoints": true
+    }
+  ]
+}

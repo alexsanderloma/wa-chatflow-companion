@@ -46,7 +46,7 @@ function Onboarding() {
   const [saving, setSaving] = useState(false);
 
   // Empresa
-  const [tipoPessoa, setTipoPessoa] = useState<"pf" | "pj">("pj");
+  const [tipoPessoa, setTipoPessoa] = useState<"PF" | "PJ">("PJ");
   const [cnpjCpf, setCnpjCpf] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState(ctx.company?.nome ?? "");
@@ -87,7 +87,7 @@ function Onboarding() {
   useEffect(() => {
     if (!ctx.company) return;
     const c = ctx.company;
-    if (c.tipo_pessoa) setTipoPessoa(c.tipo_pessoa as any);
+    if (c.tipo_pessoa) setTipoPessoa(String(c.tipo_pessoa).toUpperCase() === "PF" ? "PF" : "PJ");
     if (c.cnpj_cpf) setCnpjCpf(c.cnpj_cpf);
     if (c.razao_social) setRazaoSocial(c.razao_social);
     if (c.nome_fantasia) setNomeFantasia(c.nome_fantasia);
@@ -141,13 +141,14 @@ function Onboarding() {
       logo_url: logoUrl || null,
       onboarding_step: nextStep,
     };
-    await supabase.from("company").update(patch).eq("id", companyId);
+    const { error } = await supabase.from("company").update(patch).eq("id", companyId);
+    if (error) throw new Error(error.message || "Falha ao salvar dados da empresa");
   }
 
   function validateStep(): string | null {
     if (step === 0) {
       if (!nomeFantasia.trim()) return "Informe o nome da empresa.";
-      if (!cnpjCpf.trim()) return tipoPessoa === "pj" ? "Informe o CNPJ." : "Informe o CPF.";
+      if (!cnpjCpf.trim()) return tipoPessoa === "PJ" ? "Informe o CNPJ." : "Informe o CPF.";
       if (!telefone.trim()) return "Informe o telefone.";
       if (!segmento) return "Selecione o segmento.";
       if (!porte) return "Selecione o porte.";
@@ -178,18 +179,20 @@ function Onboarding() {
     try {
       await persistPartial(STEPS.length - 1);
 
-      // Upsert agente (PK = company_id)
-      await supabase.from("agent_config").upsert({
+      // Upsert agente (uma linha por company_id)
+      const { error: agErr } = await supabase.from("agent_config").upsert({
         company_id: companyId,
         user_id: ctx.user.id,
         nome_empresa: nomeFantasia.trim(),
         ...agente,
       }, { onConflict: "company_id" });
+      if (agErr) throw new Error(agErr.message || "Falha ao salvar o agente");
 
-      await supabase.from("company").update({
+      const { error: doneErr } = await supabase.from("company").update({
         onboarding_completed: true,
         nome: nomeFantasia.trim(),
       }).eq("id", companyId);
+      if (doneErr) throw new Error(doneErr.message || "Falha ao concluir onboarding");
 
       toast.success("Tudo pronto! Bem-vindo ao " + brand.name);
       window.location.href = "/app/dashboard";
@@ -235,32 +238,32 @@ function Onboarding() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setTipoPessoa("pj")}
-                className={`flex-1 rounded-lg border-2 p-3 text-sm font-semibold transition ${tipoPessoa === "pj" ? "border-primary bg-primary/5" : "border-border"}`}
+                onClick={() => setTipoPessoa("PJ")}
+                className={`flex-1 rounded-lg border-2 p-3 text-sm font-semibold transition ${tipoPessoa === "PJ" ? "border-primary bg-primary/5" : "border-border"}`}
               >Pessoa Jurídica (CNPJ)</button>
               <button
                 type="button"
-                onClick={() => setTipoPessoa("pf")}
-                className={`flex-1 rounded-lg border-2 p-3 text-sm font-semibold transition ${tipoPessoa === "pf" ? "border-primary bg-primary/5" : "border-border"}`}
+                onClick={() => setTipoPessoa("PF")}
+                className={`flex-1 rounded-lg border-2 p-3 text-sm font-semibold transition ${tipoPessoa === "PF" ? "border-primary bg-primary/5" : "border-border"}`}
               >Pessoa Física (CPF)</button>
             </div>
 
-            <Row label={tipoPessoa === "pj" ? "CNPJ" : "CPF"}>
+            <Row label={tipoPessoa === "PJ" ? "CNPJ" : "CPF"}>
               <Input
                 value={cnpjCpf}
-                onChange={(e) => setCnpjCpf(tipoPessoa === "pj" ? maskCnpj(e.target.value) : maskCpf(e.target.value))}
-                placeholder={tipoPessoa === "pj" ? "00.000.000/0000-00" : "000.000.000-00"}
+                onChange={(e) => setCnpjCpf(tipoPessoa === "PJ" ? maskCnpj(e.target.value) : maskCpf(e.target.value))}
+                placeholder={tipoPessoa === "PJ" ? "00.000.000/0000-00" : "000.000.000-00"}
                 inputMode="numeric"
               />
             </Row>
 
-            {tipoPessoa === "pj" && (
+            {tipoPessoa === "PJ" && (
               <Row label="Razão social">
                 <Input value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} placeholder="Ex: Padaria do João LTDA" />
               </Row>
             )}
 
-            <Row label={tipoPessoa === "pj" ? "Nome fantasia" : "Nome do negócio"}>
+            <Row label={tipoPessoa === "PJ" ? "Nome fantasia" : "Nome do negócio"}>
               <Input value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} placeholder="Ex: Padaria do João" />
             </Row>
 
