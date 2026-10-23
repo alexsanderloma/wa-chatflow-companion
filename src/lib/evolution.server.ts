@@ -165,6 +165,22 @@ export async function evoSendPresence(instanceName: string, number: string, pres
   }
 }
 
+// Baixa uma mídia recebida (imagem/áudio) como base64. Timeout obrigatório.
+export async function evoGetMediaBase64(
+  instanceName: string,
+  message: { key: any; message: any },
+  timeoutMs = 15_000,
+): Promise<{ base64: string | null; mimetype: string | null }> {
+  const data: any = await evo(`/chat/getBase64FromMediaMessage/${encodeURIComponent(instanceName)}`, {
+    method: "POST",
+    json: { message, convertToMp4: false },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  const raw = typeof data?.base64 === "string" ? data.base64 : null;
+  const base64 = raw ? (raw.includes("base64,") ? raw.split("base64,").pop()! : raw).replace(/\s/g, "") : null;
+  return { base64: base64 || null, mimetype: typeof data?.mimetype === "string" ? data.mimetype : null };
+}
+
 export async function evoLogout(instanceName: string) {
   return evo(`/instance/logout/${encodeURIComponent(instanceName)}`, { method: "DELETE" });
 }
