@@ -14,12 +14,13 @@ import { toast } from "sonner";
 import { Bot, Loader2, Save, Send, Sparkles, Wand2, ChevronDown, Settings2, RefreshCcw, HelpCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { brand } from "@/config/brand";
 import { buildSystemPrompt } from "@/lib/ai-prompt";
+import { normalizeEscalationPhone } from "@/lib/human-escalation";
 import { testAiReply } from "@/lib/evolution.functions";
 import { generateAgentConfig, analyzeBusinessBrief, type BriefQuestion } from "@/lib/agent-ai.functions";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 
 export const Route = createFileRoute("/app/agente")({
-  head: () => ({ meta: [{ title: `${brand.name} — Agente IA` }] }),
+  head: () => ({ meta: [{ title: `${brand.name} — Agente IA` }, { name: "description", content: "Configure o atendimento e os responsáveis por alertas humanos na sua empresa." }, { property: "og:title", content: `${brand.name} — Agente IA` }, { property: "og:description", content: "Atendimento e alertas humanos por empresa." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   beforeLoad: ({ context }: any) => {
     const r = context?.membership?.role;
     if (r === "atendente") throw redirect({ to: "/app/dashboard" });
@@ -56,6 +57,7 @@ function AgentePage() {
   // Ajustes finos
   const [tamanhoResposta, setTamanhoResposta] = useState<"curtas" | "medias" | "longas">("curtas");
   const [telefone, setTelefone] = useState("");
+  const [responsavelNome, setResponsavelNome] = useState("");
   const [palavraPausar, setPalavraPausar] = useState("/pausar");
   const [palavraDespausar, setPalavraDespausar] = useState("/despausar");
   const [responderEmPartes, setResponderEmPartes] = useState(true);
@@ -67,6 +69,8 @@ function AgentePage() {
   async function reload() {
     if (!companyId) return;
     const { data } = await supabase.from("agent_config").select("*").eq("company_id", companyId).maybeSingle();
+    setTelefone(data?.telefone_transferencia || "");
+    setResponsavelNome(data?.responsavel_escalonamento_nome || "");
     if (data && data.nome_agente && data.nome_agente.trim() && data.sobre_empresa) {
       setHasConfig(true);
       setCfg(data);
@@ -135,11 +139,14 @@ function AgentePage() {
 
   async function save() {
     if (!companyId || !cfg) return;
+    const normalizedPhone = telefone.trim() ? normalizeEscalationPhone(telefone) : "";
+    if (normalizedPhone === null) return toast.error("Informe um WhatsApp válido com DDD e código do país.");
     setSaving(true);
     const payload = {
       ...cfg,
       tamanho_resposta: tamanhoResposta,
-      telefone_transferencia: telefone,
+      telefone_transferencia: normalizedPhone,
+      responsavel_escalonamento_nome: responsavelNome.trim().slice(0, 100),
       palavra_pausar: palavraPausar,
       palavra_despausar: palavraDespausar,
       responder_em_partes: responderEmPartes,
@@ -350,8 +357,13 @@ function AgentePage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Telefone para transferir atendimento</Label>
+                  <Label>Nome do responsável pelos alertas</Label>
+                  <Input value={responsavelNome} onChange={(e) => setResponsavelNome(e.target.value)} placeholder="Responsável" maxLength={100} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>WhatsApp do responsável pelos alertas</Label>
                   <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="+55 11 99999-0000" />
+                  <p className="text-xs text-muted-foreground">Este contato recebe alertas quando a IA precisa de uma pessoa da empresa. Após o alerta, a IA fica pausada na conversa. O número não é mostrado ao cliente.</p>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
