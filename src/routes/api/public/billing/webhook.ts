@@ -16,22 +16,28 @@ async function getAdmin() {
   return supabaseAdmin;
 }
 
-async function findCompanyByEmail(supabase: any, email: string): Promise<string | null> {
-  const { data: prof } = await supabase
+type CompanyMatch = { companyId: string; error?: undefined } | { companyId?: undefined; error: string };
+
+// Associação explícita: exige exatamente 1 empresa ativa para o e-mail; nunca escolhe arbitrariamente.
+async function findCompanyByEmail(supabase: any, email: string): Promise<CompanyMatch> {
+  const { data: profs, error: profErr } = await supabase
     .from("profiles")
     .select("user_id")
     .ilike("email", email)
-    .maybeSingle();
-  if (!prof?.user_id) return null;
-  const { data: cu } = await supabase
+    .limit(2);
+  if (profErr) return { error: `falha ao buscar perfil: ${profErr.message}` };
+  if (!profs?.length) return { error: "nenhum usuário encontrado para o email" };
+  if (profs.length > 1) return { error: "email corresponde a mais de um usuário; associação ambígua" };
+  const { data: cus, error: cuErr } = await supabase
     .from("company_user")
     .select("company_id")
-    .eq("user_id", prof.user_id)
+    .eq("user_id", profs[0].user_id)
     .eq("ativo", true)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  return cu?.company_id ?? null;
+    .limit(2);
+  if (cuErr) return { error: `falha ao buscar empresa: ${cuErr.message}` };
+  if (!cus?.length) return { error: "empresa não encontrada para o email" };
+  if (cus.length > 1) return { error: "email vinculado a mais de uma empresa ativa; associação ambígua" };
+  return { companyId: cus[0].company_id as string };
 }
 
 async function findPlanByRef(supabase: any, ref: string | null): Promise<string | null> {
@@ -62,13 +68,15 @@ async function applyEvent(evt: NormalizedBillingEvent) {
     return;
   }
 
-  const companyId = await findCompanyByEmail(supabase, evt.buyerEmail);
-  if (!companyId) {
-    await supabase
+  const match = await findCompanyByEmail(supabase, evt.buyerEmail);
+  if (match.error !== undefined) {
+    const { error: logErr } = await supabase
       .from("billing_event_log")
-      .insert({ ...logRow, error: "empresa não encontrada para o email" });
+      .insert({ ...logRow, error: match.error });
+    if (logErr) console.error("[billing.webhook] log", logErr.message);
     return;
   }
+  const companyId = match.companyId;
 
   const planId = await findPlanByRef(supabase, evt.productRef);
 
