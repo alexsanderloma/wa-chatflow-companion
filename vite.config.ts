@@ -11,6 +11,11 @@ export default defineConfig({
     plugins: [{
       name: 'flowa-connectivity-client',
       enforce: 'pre',
+      transform(code, id) {
+        if (id.includes('/src/') && code.includes('@/integrations/supabase/client')) {
+          return code.replace(/(['"])@\/integrations\/supabase\/client\1/g, '$1@/lib/supabase-connectivity$1');
+        }
+      },
       resolveId(source, importer) {
         if (source === '@/integrations/supabase/client' ||
           (source === './client' && importer?.replaceAll('\\', '/').endsWith('/integrations/supabase/auth-attacher.ts'))) {
