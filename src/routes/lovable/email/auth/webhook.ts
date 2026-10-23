@@ -9,7 +9,7 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "Remix of AtendeZap - TurboSaaS"
+const SITE_NAME = "FLOWA"
 const SENDER_DOMAIN = "notify.flowa.store"
 const ROOT_DOMAIN = "flowa.store"
 const FROM_DOMAIN = "flowa.store"
