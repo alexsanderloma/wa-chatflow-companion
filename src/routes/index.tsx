@@ -404,7 +404,7 @@ function PhoneMock() {
           {/* chat header */}
           <div className="flex items-center gap-3 px-4 py-3" style={{ background: "var(--lp-chat-header-bg)", borderBottom: "1px solid var(--lp-chat-header-bd)" }}>
             <div className="grid place-items-center size-9 rounded-full text-black font-bold" style={{ background: "linear-gradient(135deg,#25D366,#16a34a)" }}>
-              A
+              F
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold truncate">Flowa • IA</div>
