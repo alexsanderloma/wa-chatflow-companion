@@ -331,7 +331,7 @@ function Pain() {
   return (
     <section className="px-5 md:px-8 py-24 md:py-28">
       <div className="mx-auto max-w-3xl text-center reveal" data-reveal>
-        <h2 className="font-display text-4xl md:text-5xl leading-[1.02] tracking-tight">
+        <h2 className="font-display text-4xl md:text-5xl leading-[1.02] tracking-normal">
           Lead que espera, lead que <span className="text-grad">compra do concorrente</span>.
         </h2>
         <p className="mt-6 text-lg md:text-xl text-foreground/65 leading-relaxed">
@@ -620,7 +620,7 @@ function FinalCta({ onCta }: { onCta: (p: "/entrar" | "/demo/dashboard" | "#plan
 
 
         <div className="relative">
-          <h2 className="font-display text-4xl sm:text-3xl md:text-5xl leading-[0.98] tracking-tight">
+          <h2 className="font-display text-4xl sm:text-3xl md:text-5xl leading-[0.98] tracking-normal">
             Pare de perder venda no <span className="text-grad">"oi, sumiu"</span>.
           </h2>
           <p className="mt-6 text-foreground/70 max-w-xl mx-auto text-lg sm:text-xl">
@@ -704,7 +704,7 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: React.ReactN
         {eyebrow}
         <span className="h-px w-10 bg-brand/60" />
       </div>
-      <h2 className="font-display text-3xl md:text-5xl font-black leading-[0.98] tracking-tight mt-5 max-w-4xl mx-auto">
+      <h2 className="font-display text-3xl md:text-5xl font-black leading-[0.98] tracking-normal mt-5 max-w-4xl mx-auto">
         {title}
       </h2>
     </div>

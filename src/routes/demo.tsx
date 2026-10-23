@@ -76,7 +76,7 @@ function DemoLayout() {
       <div className="md:hidden flex items-center gap-2.5 px-4 py-3 border-b border-[color:var(--hairline)]">
         <BrandMark className="size-8" />
         <div className="min-w-0">
-          <div className="font-display font-bold tracking-tight text-[14.5px] leading-none truncate">{brand.name}</div>
+          <div className="font-display font-bold tracking-normal text-[14.5px] leading-none truncate">{brand.name}</div>
           <div className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground truncate mt-0.5">Demo · Clínica de Estética</div>
         </div>
       </div>
@@ -86,7 +86,7 @@ function DemoLayout() {
           <div className="px-5 py-5 flex items-center gap-3 border-b border-[color:var(--hairline)]">
             <BrandMark className="size-10" />
             <div className="min-w-0">
-              <div className="font-display font-extrabold tracking-tight truncate text-[16px]">{brand.name}</div>
+              <div className="font-display font-extrabold tracking-normal truncate text-[16px]">{brand.name}</div>
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground truncate -mt-0.5">DEMO · Clínica Vitalis</div>
             </div>
           </div>

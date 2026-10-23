@@ -109,7 +109,7 @@ export function AppShell({
             <BrandMark className="size-8" />
           )}
           <div className="min-w-0">
-            <div className="font-display font-bold tracking-tight text-[14.5px] leading-none truncate">{brand.name}</div>
+            <div className="font-display font-bold tracking-normal text-[14.5px] leading-none truncate">{brand.name}</div>
             <div className="text-[10.5px] text-muted-foreground truncate mt-0.5">{company?.nome || "Sua empresa"}</div>
           </div>
         </div>
@@ -172,7 +172,7 @@ function Sidebar({
           <BrandMark className="size-10" />
         )}
         <div className="min-w-0">
-          <div className="font-display font-extrabold tracking-tight truncate text-[16px]">{brand.name}</div>
+          <div className="font-display font-extrabold tracking-normal truncate text-[16px]">{brand.name}</div>
           <div className="text-[11.5px] text-muted-foreground truncate -mt-0.5">{company?.nome || "Sua empresa"}</div>
         </div>
       </div>
