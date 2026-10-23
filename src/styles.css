@@ -64,11 +64,11 @@
 :root {
   color-scheme: dark;
   --radius: .5rem;
-  --brand: oklch(0.748 0.089 83);
+  --brand: oklch(0.74940376 0.088533484 83.122755619);
   --brand-strong: oklch(0.82 0.073 83);
   --brand-master: oklch(0.748 0.089 83);
-  --bg-deep: oklch(0.15 0 0);
-  --panel: oklch(0.205 0 0);
+  --bg-deep: oklch(0.149577116 0 0);
+  --panel: oklch(0.20462653 0 0);
   --panel-2: oklch(0.245 0 0);
   --hairline: oklch(0.93 0.012 85 / .12);
   --hairline-strong: oklch(0.93 0.012 85 / .2);
