@@ -61,3 +61,26 @@ test("base64 byte length", () => {
   assert.equal(base64ByteLength("QUJD"), 3);
   assert.equal(base64ByteLength("QUI="), 2);
 });
+
+import { shouldAnalyzeMedia } from "./whatsapp-media.ts";
+import { readFileSync } from "node:fs";
+
+test("analyzer gate blocks on every no-reply exit", () => {
+  const base = { hasMedia: true, optOut: false, paused: false, offHours: false, superseded: false, humanActive: false, noCredit: false, throttled: false };
+  assert.equal(shouldAnalyzeMedia(base), true);
+  for (const k of ["optOut", "paused", "offHours", "superseded", "humanActive", "noCredit", "throttled"]) {
+    assert.equal(shouldAnalyzeMedia({ ...base, [k]: true }), false, k);
+  }
+  assert.equal(shouldAnalyzeMedia({ ...base, hasMedia: false }), false);
+});
+
+test("webhook calls the analyzer only after all no-reply exits", () => {
+  const src = readFileSync(new URL("../routes/api/public/whatsapp-webhook.ts", import.meta.url), "utf8");
+  const analyze = src.indexOf("analyzeWhatsappMedia(");
+  assert.ok(analyze > 0);
+  assert.equal(src.indexOf("analyzeWhatsappMedia("), src.lastIndexOf("analyzeWhatsappMedia("));
+  for (const exit of ['"opt-out"', '"paused-contact"', '"off-hours"', '"superseded"', '"human-active"', '"no_credits"', "return new Response(throttleReason"]) {
+    const i = src.indexOf(exit);
+    assert.ok(i > 0 && i < analyze, exit);
+  }
+});
