@@ -50,6 +50,10 @@ function safeExcerpt(value: string, max: number): string {
 
 // Claim + pause are one database transaction. Only the winner may send a notification.
 export async function executeEscalation(input: EscalationInput, io: EscalationIO): Promise<"notified" | "failed" | "duplicate"> {
+  input = { ...input, nome: input.nome ? safeExcerpt(input.nome, 100) : null,
+    motivo: safeExcerpt(input.motivo, 200), ultimaMensagem: safeExcerpt(input.ultimaMensagem, 800),
+    responsavelNome: safeExcerpt(input.responsavelNome, 100),
+    responsavelTelefone: normalizeEscalationPhone(input.responsavelTelefone) || "" };
   let id: string | null = null;
   try {
     id = await io.claim(input);
