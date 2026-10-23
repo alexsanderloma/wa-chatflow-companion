@@ -50,7 +50,7 @@ function ConexaoPage() {
   useEffect(() => {
     mounted.current = true;
     void doCheck(true);
-    return () => { mounted.current = false; requests.current.next(); stopPolling(); };
+    return () => { mounted.current = false; requests.current.next(); checkBusy.current = false; stopPolling(); };
   }, []);
 
   function startPolling() {
@@ -174,7 +174,7 @@ function ConexaoPage() {
                 <Power className="size-4 mr-1.5" /> Desconectar
               </Button>
             ) : (
-              <Button size="sm" onClick={doConnect} disabled={loading || pending || status === "unknown"}>
+              <Button size="sm" onClick={doConnect} disabled={loading || pending || checking}>
                 {loading ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <QrCode className="size-4 mr-1.5" />}
                 {qr ? "Gerar novo QR" : "Conectar WhatsApp"}
               </Button>
