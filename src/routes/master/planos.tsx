@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { brand } from "@/config/brand";
 import { toast } from "sonner";
-import { Plus, Edit3, Star, Loader2, Trash2, Package } from "lucide-react";
+import { Plus, Edit3, Star, Loader2, Trash2, Package, CreditCard } from "lucide-react";
 
 export const Route = createFileRoute("/master/planos")({
   head: () => ({ meta: [{ title: `${brand.name} — Planos` }] }),
@@ -134,9 +134,13 @@ function PlanosPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between flex-wrap gap-3">
-        <div>
+        <div className="max-w-3xl">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Planos</h1>
           <p className="text-sm text-muted-foreground mt-1">Catálogo de planos vendidos na landing page e dentro do app.</p>
+          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+            Os planos ativos são cobrados pelo checkout seguro do Asaas. O vínculo de pagamento é criado na hora da assinatura,
+            automaticamente para a empresa e o plano escolhidos pelo cliente.
+          </p>
         </div>
         <Button onClick={openNew}><Plus className="size-4 mr-1.5" /> Novo plano</Button>
       </div>
@@ -187,13 +191,17 @@ function PlanosPage() {
               {p.checkout_url ? (
                 <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 -mt-1 truncate">
                   <Package className="size-3 shrink-0" />
+                  <span className="shrink-0">Checkout externo:</span>
                   <a href={p.checkout_url} target="_blank" rel="noreferrer" className="truncate hover:underline">
                     {p.checkout_url}
                   </a>
                 </div>
               ) : (
-                <div className="text-[10px] text-amber-600 flex items-center gap-1.5 -mt-1">
-                  <Package className="size-3" /> Sem URL de checkout — clientes não conseguem assinar
+                <div className="text-[10px] text-muted-foreground -mt-1 rounded-md border border-border/60 bg-muted/40 px-2 py-1.5 leading-relaxed flex items-start gap-1.5">
+                  <CreditCard className="size-3 shrink-0 mt-0.5" />
+                  <span>
+                    Checkout Asaas gerado automaticamente por empresa e plano. O cliente escolhe Pix, cartão ou boleto ao assinar.
+                  </span>
                 </div>
               )}
             </Card>
@@ -230,15 +238,17 @@ function PlanosPage() {
               <Field label="Features (uma por linha)" full>
                 <Textarea rows={5} value={featuresText} onChange={(e) => setFeaturesText(e.target.value)} placeholder="1 número de WhatsApp&#10;Integração Google Agenda&#10;..." />
               </Field>
-              <Field label="URL de checkout (Kiwify / Cakto / Perfectpay)" full>
+              <Field label="URL de checkout externa (opcional — Kiwify / Cakto / Perfectpay)" full>
                 <Input
                   value={editing.checkout_url ?? ""}
                   onChange={(e) => setEditing({ ...editing, checkout_url: e.target.value })}
                   placeholder="https://pay.kiwify.com.br/abc123"
                 />
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Link para onde o cliente é enviado ao clicar em "Assinar". O sistema adiciona o e-mail dele automaticamente
-                  (<code>?email=</code>) pra liberar a assinatura quando o webhook chegar.
+                  Integração legada/alternativa, válida só para provedores externos estáticos (Kiwify, Cakto, Perfectpay).
+                  Não se aplica ao Asaas: lá o link de pagamento é gerado automaticamente por empresa e plano no momento da
+                  assinatura. Se preencher, o sistema adiciona o e-mail do cliente (<code>?email=</code>) e a assinatura é
+                  liberada quando o webhook daquele provedor chegar.
                 </p>
               </Field>
               <div className="col-span-2 flex items-center gap-6 pt-1">
