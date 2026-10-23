@@ -1,9 +1,9 @@
 # FLOWA reference-led presentation replacement
 
 ## Master company plan management
-- [ ] Add super-admin-only atomic assign/change/cancel with existing audit history; no external billing calls or existing data edits during implementation.
-- [ ] Add company plan dialog and subscription history presentation.
-- [ ] Run focused tests, verify authenticated read-only UI and automatic build; scan and request publication.
+- [x] Add super-admin-only atomic assign/change/cancel with existing audit history; no external billing calls or existing data edits during implementation.
+- [x] Add company plan dialog and subscription history presentation.
+- [x] 14 focused/regression tests passed; authenticated desktop/mobile dialog, plan selection, removal confirmation and subscription readback verified; automatic build OK. Actual mutations intentionally not submitted to preserve existing subscriptions. Security scan completed with no critical findings; request publication.
 
 ## Same-origin connectivity fallback
 - [x] Implement allowlisted server proxy and production-only browser connectivity without editing managed clients.
