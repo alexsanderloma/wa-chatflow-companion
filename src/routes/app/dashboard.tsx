@@ -11,7 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/app/dashboard")({
-  head: () => ({ meta: [{ title: `${brand.name} — Dashboard` }] }),
+  head: () => ({ meta: [
+    { title: `${brand.name} — Dashboard` },
+    { name: "description", content: "Acompanhe atendimentos, negociações e resultados do seu CRM Kanban na FLOWA." },
+    { property: "og:title", content: `${brand.name} — Dashboard` },
+    { property: "og:description", content: "Acompanhe atendimentos, negociações e resultados do seu CRM Kanban na FLOWA." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Dashboard,
 });
 
@@ -145,7 +152,7 @@ function Dashboard() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="font-display text-[26px] font-extrabold tracking-tight flex items-center gap-2">Dashboard <HelpTip text="Visão geral do seu atendimento: KPIs do dia, últimas mensagens recebidas e conversas que precisam de você." /></h1>
+          <h1 className="font-display text-[26px] font-extrabold  flex items-center gap-2">Dashboard <HelpTip text="Visão geral do seu atendimento: KPIs do dia, últimas mensagens recebidas e conversas que precisam de você." /></h1>
           <p className="text-sm text-muted-foreground">Visão geral · {labelPeriod(period, range)}</p>
         </div>
         <PeriodPicker value={period} onChange={setPeriod} from={from} to={to} setFrom={setFrom} setTo={setTo} status={status} />
@@ -159,7 +166,7 @@ function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-5">
-        <div className="rounded-2xl border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6">
+        <div className="rounded-lg border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6">
           <div className="flex items-center justify-between mb-1">
             <h3 className="font-display text-[17px] font-semibold">Atendimentos</h3>
             <Trophy className="size-4 text-muted-foreground" />
@@ -170,7 +177,7 @@ function Dashboard() {
         <PrecisaDeVoceCard paradas={paradas} followups={followups} novos={novos} />
       </div>
 
-      <div className="rounded-2xl border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6">
+      <div className="rounded-lg border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-display text-[17px] font-semibold">Últimas mensagens</h3>
@@ -200,16 +207,16 @@ function PeriodPicker({ value, onChange, from, to, setFrom, setTo, status }: {
     <div className="flex items-center gap-2 flex-wrap">
       <div className="inline-flex rounded-lg border border-[color:var(--hairline)] bg-[color:var(--panel)] p-1">
         {(["today", "7d", "30d", "custom"] as Period[]).map((p) => (
-          <button key={p} onClick={() => onChange(p)}
+          <Button variant="ghost" key={p} onClick={() => onChange(p)}
             className={`px-3 py-1.5 text-[13px] font-semibold rounded-md transition-colors ${
               value === p ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-text)]" : "text-muted-foreground hover:text-foreground"
             }`}>
             {p === "today" ? "Hoje" : p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : "Personalizado"}
-          </button>
+          </Button>
         ))}
       </div>
       {value === "custom" && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-[color:var(--panel)] border border-[color:var(--hairline)] rounded-md px-2 py-1.5 text-[13px]" />
           <span className="text-muted-foreground text-sm">→</span>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-[color:var(--panel)] border border-[color:var(--hairline)] rounded-md px-2 py-1.5 text-[13px]" />
@@ -226,12 +233,12 @@ function PrecisaDeVoceCard({ paradas, followups, novos }: {
   novos: number;
 }) {
   return (
-    <div className="rounded-2xl border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6 flex flex-col">
+    <div className="rounded-lg border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6 flex flex-col">
       <div className="flex items-center gap-2 mb-1">
-        <AlertTriangle className="size-4 text-amber-500" />
+        <AlertTriangle className="size-4 text-warning" />
         <h3 className="font-display text-[17px] font-semibold">Precisa de você</h3>
       </div>
-      <p className="text-xs text-muted-foreground mb-4">o que esperar prioridade hoje</p>
+      <p className="text-xs text-muted-foreground mb-4">o que merece prioridade hoje</p>
 
       <div className="grid grid-cols-3 gap-2 mb-4">
         <Stat icon={<Clock className="size-3.5" />} label="Paradas +1h" value={paradas.length} />
@@ -245,7 +252,7 @@ function PrecisaDeVoceCard({ paradas, followups, novos }: {
         )}
         {paradas.slice(0, 4).map((p) => (
           <Link key={p.numero} to="/app/conversas" className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-[color:var(--panel-2)] text-[13px]">
-            <span className="size-2 rounded-full bg-amber-500 shrink-0" />
+            <span className="size-2 rounded-full bg-warning shrink-0" />
             <span className="truncate flex-1">{p.nome || p.numero}</span>
             <span className="text-muted-foreground text-[11.5px]">{p.min}min</span>
           </Link>
@@ -277,10 +284,10 @@ function Stat({ icon, label, value }: { icon: any; label: string; value: number 
 
 function StatusPill({ status }: { status: "connected" | "connecting" | "disconnected" }) {
   const cfg = status === "connected"
-    ? { txt: "Agente conectado", cls: "text-[color:var(--brand-text)] border-[color:var(--brand-soft-strong)] bg-[color:var(--brand-soft)]", dot: "var(--brand)" }
+    ? { txt: "Agente conectado", cls: "text-success border-success/20 bg-success-soft", dot: "var(--success)" }
     : status === "connecting"
-    ? { txt: "Conectando…", cls: "text-amber-600 dark:text-amber-300 border-amber-500/30 bg-amber-500/10", dot: "rgb(245 158 11)" }
-    : { txt: "Desconectado", cls: "text-red-600 dark:text-red-300 border-red-500/30 bg-red-500/10", dot: "rgb(239 68 68)" };
+    ? { txt: "Conectando…", cls: "text-warning border-warning/30 bg-warning/10", dot: "var(--warning)" }
+    : { txt: "Desconectado", cls: "text-destructive border-destructive/30 bg-destructive/10", dot: "var(--destructive)" };
   return (
     <div className={`flex items-center gap-2 ${cfg.cls} border text-[12.5px] font-semibold px-3 py-1.5 rounded-full`}>
       <span className="size-2 rounded-full" style={{ background: cfg.dot }} />

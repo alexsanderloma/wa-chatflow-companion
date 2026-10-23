@@ -18,7 +18,7 @@ export function MessageTimeline({ items, empty }: { items: TimelineItem[]; empty
         <li key={m.id} className="flex gap-3 py-4 border-b border-border last:border-b-0">
           <InitialsAvatar name={m.nome} size={40} />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-[15px]">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] sm:text-[15px]">
               <b className="truncate font-semibold">{m.nome}</b>
               <AuthorBadge autor={m.autor} />
               <span className="ml-auto text-[12px] text-muted-foreground whitespace-nowrap">
@@ -36,8 +36,8 @@ export function MessageTimeline({ items, empty }: { items: TimelineItem[]; empty
 export function AuthorBadge({ autor }: { autor: "ia" | "humano" | "contato" }) {
   const cls =
     autor === "ia"
-      ? "bg-[rgba(37,211,102,.15)] text-[#9af0bd] ring-1 ring-[rgba(37,211,102,.25)]"
-      : "bg-muted text-foreground/70 ring-1 ring-white/10";
+      ? "bg-brand-soft text-brand ring-1 ring-brand/20"
+      : "bg-muted text-foreground/70 ring-1 ring-border";
   const txt = autor === "ia" ? "IA" : autor === "humano" ? "Atendente" : "Contato";
-  return <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${cls}`}>{txt}</span>;
+  return <span className={`shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-md ${cls}`}>{txt}</span>;
 }

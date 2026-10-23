@@ -20,7 +20,7 @@ export function MobileBottomNav({
       aria-label="Navegação principal"
     >
       <div
-        className="mx-auto max-w-md rounded-2xl border border-[color:var(--hairline)] bg-[color:var(--panel)]/75 backdrop-blur-xl shadow-[0_8px_30px_-12px_rgba(0,0,0,.35)] flex items-center justify-around px-1.5 py-1.5"
+        className="mx-auto max-w-md rounded-lg border border-border bg-card/95 backdrop-blur-xl flex items-center justify-around px-1.5 py-1.5"
         style={{ WebkitBackdropFilter: "blur(20px)" }}
       >
         {items.map((it) => {
@@ -47,7 +47,7 @@ export function MobileBottomNav({
               {active && (
                 <span
                   className="absolute -top-0.5 h-[3px] w-7 rounded-full"
-                  style={{ background: accent, boxShadow: `0 0 10px ${accent}` }}
+                  style={{ background: accent }}
                 />
               )}
             </Link>

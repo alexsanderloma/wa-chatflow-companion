@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router";
+import { BrandMark } from "@/components/brand-mark";
 import { brand } from "@/config/brand";
 import {
   Sparkles, LayoutDashboard, Inbox, KanbanSquare, Bot, Zap, LogIn,
@@ -73,14 +74,9 @@ function DemoLayout() {
 
       {/* Mobile brand bar */}
       <div className="md:hidden flex items-center gap-2.5 px-4 py-3 border-b border-[color:var(--hairline)]">
-        <div
-          className="size-8 rounded-lg grid place-items-center text-primary-foreground shrink-0"
-          style={{ background: `linear-gradient(135deg, ${PRIMARY}, var(--brand-strong))` }}
-        >
-          <Zap className="size-4" strokeWidth={2.5} />
-        </div>
+        <BrandMark className="size-8" />
         <div className="min-w-0">
-          <div className="font-display font-bold tracking-tight text-[14.5px] leading-none truncate">{brand.name}</div>
+          <div className="font-display font-bold tracking-normal text-[14.5px] leading-none truncate">{brand.name}</div>
           <div className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground truncate mt-0.5">Demo · Clínica de Estética</div>
         </div>
       </div>
@@ -88,14 +84,9 @@ function DemoLayout() {
       <div className="flex flex-1 flex-col md:flex-row">
         <aside className="hidden md:flex w-[260px] min-h-screen border-r border-[color:var(--hairline)] bg-[color:var(--sidebar-bg)] flex-col">
           <div className="px-5 py-5 flex items-center gap-3 border-b border-[color:var(--hairline)]">
-            <div
-              className="size-10 rounded-xl grid place-items-center text-primary-foreground shadow-md ring-1 ring-[color:var(--hairline)]"
-              style={{ background: `linear-gradient(135deg, ${PRIMARY}, var(--brand-strong))` }}
-            >
-              <Zap className="size-5" strokeWidth={2.5} />
-            </div>
+            <BrandMark className="size-10" />
             <div className="min-w-0">
-              <div className="font-display font-extrabold tracking-tight truncate text-[16px]">{brand.name}</div>
+              <div className="font-display font-extrabold tracking-normal truncate text-[16px]">{brand.name}</div>
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground truncate -mt-0.5">DEMO · Clínica Vitalis</div>
             </div>
           </div>
@@ -121,13 +112,13 @@ function DemoLayout() {
                           active
                             ? {
                                 background: "var(--brand-soft)",
-                                boxShadow: `inset 0 0 0 1px var(--brand-soft-strong), 0 0 22px -10px ${PRIMARY}`,
+                                boxShadow: `inset 0 0 0 1px var(--brand-soft-strong), 0 0 0 0 transparent`,
                               }
                             : undefined
                         }
                       >
                         {active && (
-                          <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r" style={{ background: PRIMARY, boxShadow: `0 0 12px ${PRIMARY}` }} />
+                          <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r" style={{ background: PRIMARY }} />
                         )}
                         <Icon className="size-[18px] shrink-0" style={active ? { color: PRIMARY } : undefined} />
                         <span className="flex-1 truncate">{it.label}</span>
