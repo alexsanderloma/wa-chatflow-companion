@@ -1,7 +1,6 @@
-# FLOWA visual rebrand
+# FLOWA reference-led presentation replacement
 
-- [x] Update brand configuration, reusable code-native mark and theme tokens.
-- [x] Restyle landing and sign-in presentation without changing flows.
-- [x] Restyle app/demo shells and dashboards without changing data or controls.
-- [x] Verify desktop/mobile public and demo rendering, existing controls, support test and automatic validation; report changed files.
-- [ ] Verify the company dashboard with real data — blocked: the authorized master account has no company memberships and the existing company list is empty.
+- [ ] Recompose the editorial landing and premium chat phone using the supplied reference.
+- [ ] Recompose login with code-native terrain texture and a graphite form card; preserve auth handlers.
+- [ ] Restyle narrow app/demo shells, compact analytics and existing CRM boards without changing data or controls.
+- [ ] Validate desktop/mobile public/demo screens, existing interactions, automatic typecheck/build and report actual changed files.
