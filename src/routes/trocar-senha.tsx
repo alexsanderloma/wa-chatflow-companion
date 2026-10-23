@@ -35,11 +35,25 @@ function Page() {
     if (error) { setLoading(false); return toast.error(error.message); }
     // limpa flag forcar_troca_senha em todas as memberships do usuário
     if (userId) {
-      await supabase.from("company_user").update({ forcar_troca_senha: false }).eq("user_id", userId);
+      const { error: flagErr } = await supabase
+        .from("company_user").update({ forcar_troca_senha: false }).eq("user_id", userId);
+      if (flagErr) {
+        setLoading(false);
+        return toast.error("Senha alterada, mas não foi possível liberar o acesso: " + flagErr.message);
+      }
+    }
+    // Primeiro acesso: vai ao onboarding se a empresa ainda não concluiu
+    let destino: "/app/dashboard" | "/app/onboarding" = "/app/dashboard";
+    if (userId) {
+      const { data: cu } = await supabase
+        .from("company_user").select("company:company(onboarding_completed)")
+        .eq("user_id", userId).eq("ativo", true)
+        .order("created_at", { ascending: true }).limit(1).maybeSingle();
+      if (cu && !(cu.company as any)?.onboarding_completed) destino = "/app/onboarding";
     }
     setLoading(false);
     toast.success("Senha atualizada!");
-    navigate({ to: "/app/dashboard", replace: true });
+    navigate({ to: destino, replace: true });
   }
 
   return (

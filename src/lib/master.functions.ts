@@ -140,7 +140,7 @@ export const createCompanyWithOwner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: {
     nome: string; ownerEmail: string;
-    planId?: string | null; trialDays?: number; password?: string | null;
+    planId: string; password?: string | null;
   }) => {
     const nome = String(d.nome || "").trim();
     const ownerEmail = String(d.ownerEmail || "").trim().toLowerCase();
@@ -148,78 +148,67 @@ export const createCompanyWithOwner = createServerFn({ method: "POST" })
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail)) throw new Error("Email inválido");
     const password = d.password ? String(d.password) : null;
     if (password && password.length < 8) throw new Error("Senha mínima de 8 caracteres");
-    return {
-      nome, ownerEmail,
-      planId: d.planId || null,
-      trialDays: Math.max(0, Math.min(90, Math.floor(d.trialDays ?? 3))),
-      password,
-    };
+    const planId = String(d.planId || "").trim();
+    if (!planId) throw new Error("Selecione um plano");
+    return { nome, ownerEmail, planId, password };
   })
   .handler(async ({ context, data }) => {
     await assertSuper(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // owner
+    // Valida o plano antes de criar/alterar o usuário
+    const { data: plan, error: planErr } = await supabaseAdmin
+      .from("plan").select("id").eq("id", data.planId).eq("ativo", true).maybeSingle();
+    if (planErr) throw new Error(planErr.message);
+    if (!plan) throw new Error("Plano inexistente ou inativo");
+
+    // owner (Auth/profile antes da transação)
     let ownerId: string | null = null;
-    const { data: prof } = await supabaseAdmin.from("profiles").select("user_id").eq("email", data.ownerEmail).maybeSingle();
+    const { data: prof, error: profErr } = await supabaseAdmin
+      .from("profiles").select("user_id").eq("email", data.ownerEmail).maybeSingle();
+    if (profErr) throw new Error(profErr.message);
     if (prof) ownerId = prof.user_id;
     let tempPassword: string | null = null;
+    let generated = false;
     if (!ownerId) {
+      generated = !data.password;
       tempPassword = data.password ?? (Math.random().toString(36).slice(2, 10) + "A1!");
       const { data: c, error } = await supabaseAdmin.auth.admin.createUser({
         email: data.ownerEmail, password: tempPassword, email_confirm: true,
       });
       if (error || !c.user) throw new Error(error?.message || "Falha ao criar usuário");
       ownerId = c.user.id;
-      await supabaseAdmin.from("profiles").upsert({ user_id: ownerId, email: data.ownerEmail });
+      const { error: upProfErr } = await supabaseAdmin
+        .from("profiles").upsert({ user_id: ownerId, email: data.ownerEmail });
+      if (upProfErr) throw new Error(upProfErr.message);
     } else if (data.password) {
-      // Reset de senha do owner já existente
       const { error: upErr } = await supabaseAdmin.auth.admin.updateUserById(ownerId, {
         password: data.password, email_confirm: true,
       });
-      if (upErr) throw upErr;
+      if (upErr) throw new Error(upErr.message);
       tempPassword = data.password;
     }
 
-    // company com slug único
-    let baseSlug = slugify(data.nome);
+    // slug único
+    const baseSlug = slugify(data.nome);
     let slug = baseSlug;
     for (let i = 1; i < 20; i++) {
-      const { data: ex } = await supabaseAdmin.from("company").select("id").eq("slug", slug).maybeSingle();
+      const { data: ex, error: exErr } = await supabaseAdmin.from("company").select("id").eq("slug", slug).maybeSingle();
+      if (exErr) throw new Error(exErr.message);
       if (!ex) break;
       slug = `${baseSlug}-${i}`;
     }
-    const trialMs = data.trialDays * 86400000;
-    const trialEnd = new Date(Date.now() + trialMs).toISOString();
-    const { data: comp, error: cErr } = await supabaseAdmin
-      .from("company")
-      .insert({
-        nome: data.nome,
-        slug,
-        created_by: ownerId,
-        status_cobranca: data.trialDays > 0 ? "trial" : "ativo",
-        trial_ate: trialEnd,
-      })
-      .select("id")
-      .single();
-    if (cErr || !comp) throw new Error(cErr?.message || "Falha ao criar empresa");
 
-    await supabaseAdmin.from("company_user").insert({
-      company_id: comp.id, user_id: ownerId, role: "owner", ativo: true, forcar_troca_senha: !data.password && !!tempPassword,
+    // company + owner + subscription numa única transação
+    const { data: rows, error: rpcErr } = await (supabaseAdmin as any).rpc("create_company_with_owner", {
+      _owner_id: ownerId, _nome: data.nome, _slug: slug, _plan_id: data.planId,
+      _forcar_troca_senha: generated,
     });
+    if (rpcErr) throw new Error(rpcErr.message || "Falha ao criar empresa");
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (!row?.company_id) throw new Error("Falha ao criar empresa");
 
-    // Cria subscription em trialing já com o plano selecionado
-    if (data.planId) {
-      await supabaseAdmin.from("subscription").insert({
-        company_id: comp.id,
-        plan_id: data.planId,
-        status: data.trialDays > 0 ? "trialing" : "active",
-        trial_ends_at: trialEnd,
-        current_period_end: trialEnd,
-      });
-    }
-
-    return { ok: true, companyId: comp.id, tempPassword };
+    return { ok: true, companyId: row.company_id as string, trialDays: Number(row.trial_days), tempPassword };
   });
 
 export const listPlansBasic = createServerFn({ method: "POST" })

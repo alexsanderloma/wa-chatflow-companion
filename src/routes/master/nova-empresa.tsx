@@ -15,7 +15,7 @@ export const Route = createFileRoute("/master/nova-empresa")({
   component: NovaEmpresa,
 });
 
-type Plan = { id: string; nome: string; preco_cents: number; moeda: string; intervalo: string; trial_days: number };
+type Plan = { id: string; slug?: string; nome: string; preco_cents: number; moeda: string; intervalo: string; trial_days: number };
 
 function fmt(cents: number, moeda = "BRL") {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: moeda }).format(cents / 100);
@@ -30,7 +30,6 @@ function NovaEmpresa() {
   const [ownerEmail, setOwnerEmail] = useState("");
   const [password, setPassword] = useState("");
   const [planId, setPlanId] = useState<string>("");
-  const [trialDays, setTrialDays] = useState<number>(3);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ email: string; password: string | null } | null>(null);
 
@@ -39,9 +38,8 @@ function NovaEmpresa() {
       try {
         const r = await fetchPlans();
         setPlans(r.plans as any);
-        const mid = r.plans?.find((p: any) => p.nome?.toLowerCase().includes("pro")) ?? r.plans?.[0];
+        const mid = r.plans?.find((p: any) => p.slug === "pro" || p.nome?.toLowerCase() === "pro") ?? r.plans?.find((p: any) => p.nome?.toLowerCase().includes("pro")) ?? r.plans?.[0];
         if (mid) setPlanId(mid.id);
-        if (mid?.trial_days != null) setTrialDays(mid.trial_days);
       } catch (e: any) { toast.error(e?.message); }
     })();
   }, []);
@@ -51,7 +49,7 @@ function NovaEmpresa() {
     setBusy(true); setCreated(null);
     try {
       const r = await create({
-        data: { nome, ownerEmail, planId: planId || null, trialDays, password: password || null },
+        data: { nome, ownerEmail, planId, password: password || null },
       });
       toast.success("Empresa criada e liberada com trial");
       setCreated({ email: ownerEmail, password: r.tempPassword ?? (password || null) });
@@ -91,15 +89,6 @@ function NovaEmpresa() {
               />
               <p className="text-[11px] text-muted-foreground mt-1">Se preencher, esta será a senha de acesso.</p>
             </div>
-            <div>
-              <Label>Dias de teste grátis</Label>
-              <Input
-                type="number" min={0} max={90}
-                value={trialDays}
-                onChange={(e) => setTrialDays(Math.max(0, Math.min(90, Number(e.target.value) || 0)))}
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">Após esse prazo o cliente precisa pagar pra continuar.</p>
-            </div>
           </div>
 
           <div>
@@ -122,6 +111,9 @@ function NovaEmpresa() {
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       {fmt(p.preco_cents, p.moeda)}<span className="text-xs">/{p.intervalo === "month" ? "mês" : "ano"}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-1">
+                      {p.trial_days > 0 ? `${p.trial_days} dia${p.trial_days === 1 ? "" : "s"} de teste grátis` : "Sem período de teste"}
                     </div>
                   </button>
                 );
