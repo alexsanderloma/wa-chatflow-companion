@@ -4,7 +4,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { type ReactNode } from "react";
 import {
   LayoutDashboard, Bot, KanbanSquare, LogOut, Smartphone, Shield,
-  Inbox, Users, BarChart3, Settings, Contact, Zap, MessageCircle, Megaphone, Webhook, Wallet,
+  Inbox, Users, BarChart3, Settings, Contact, Zap, MessageCircle, Megaphone, Webhook, Wallet, Truck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { brand, supportWhatsappUrl, supportWhatsappDisplay } from "@/config/brand";
@@ -40,6 +40,7 @@ const sections: { label: string; items: NavItem[] }[] = [
     label: "Gestão",
     items: [
       { to: "/app/contatos", label: "Contatos", icon: Contact },
+      { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
       { to: "/app/financeiro", label: "Financeiro", icon: Wallet, adminOnly: true, tag: "PRO" },
       { to: "/app/relatorios", label: "Relatórios", icon: BarChart3, adminOnly: true },
       { to: "/app/conexao", label: "Conexão", icon: Smartphone },
