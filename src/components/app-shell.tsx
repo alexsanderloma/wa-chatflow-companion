@@ -92,7 +92,7 @@ export function AppShell({
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="workspace-root min-h-screen flex flex-col bg-background text-foreground">
       {company && <TrialBanner company={company} />}
       {company && (
         <div className="hidden md:flex items-center justify-end gap-2 px-4 py-1.5 bg-[color:var(--panel)]/60 border-b border-[color:var(--hairline)]">
@@ -137,8 +137,8 @@ export function AppShell({
           roleLabel={roleLabel}
           signOut={signOut}
         />
-        <main className="flex-1 px-4 pt-4 pb-28 md:p-8 md:pb-8 max-w-7xl w-full mx-auto">
-          <div className="hidden md:flex items-center justify-between gap-3 mb-6">
+        <main className="workspace-main min-w-0 flex-1 px-4 pt-4 pb-28 md:px-6 md:py-5 md:pb-8 w-full mx-auto">
+          <div className="hidden md:flex items-center justify-between gap-3 mb-5 pb-4 border-b border-border">
             <WhatsappStatusPill />
             <div className="flex items-center gap-2 ml-auto">
               <ThemeToggle />
@@ -164,20 +164,20 @@ function Sidebar({
   loc, company, isSuperAdmin, isAdmin, primary, userName, email, roleLabel, signOut,
 }: any) {
   return (
-    <aside className="hidden md:flex w-[260px] min-h-screen border-r border-[color:var(--hairline)] bg-[color:var(--sidebar-bg)] flex-col">
-      <div className="px-5 py-5 flex items-center gap-3 border-b border-[color:var(--hairline)]">
+    <aside className="workspace-sidebar hidden md:flex w-[214px] shrink-0 min-h-screen border-r border-[color:var(--hairline)] bg-[color:var(--sidebar-bg)] flex-col">
+      <div className="px-4 py-5 flex items-center gap-2.5 border-b border-[color:var(--hairline)]">
         {company?.logo_url ? (
           <img src={company.logo_url} alt={company.nome} className="size-10 rounded-xl object-cover ring-1 ring-[color:var(--hairline)]" />
         ) : (
           <BrandMark className="size-10" />
         )}
         <div className="min-w-0">
-          <div className="font-display font-extrabold tracking-normal truncate text-[16px]">{brand.name}</div>
+          <div className="font-display font-medium tracking-normal truncate text-[16px]">{brand.name}</div>
           <div className="text-[11.5px] text-muted-foreground truncate -mt-0.5">{company?.nome || "Sua empresa"}</div>
         </div>
       </div>
 
-      <nav className="p-3 flex-1 overflow-y-auto space-y-5">
+      <nav className="p-2.5 flex-1 overflow-y-auto space-y-5">
         {sections.map((sec) => (
           <div key={sec.label}>
             <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
@@ -198,7 +198,7 @@ function Sidebar({
             <Shield className="size-4" /> Painel Master
           </Link>
         )}
-        <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-[color:var(--panel-2)] border border-[color:var(--hairline)]">
+        <div className="flex items-center gap-3 px-2 py-2 rounded-sm bg-[color:var(--panel-2)] border border-[color:var(--hairline)]">
           <div
             className="size-9 rounded-full grid place-items-center text-[13px] font-bold text-[color:var(--brand-text)] ring-1 ring-[color:var(--hairline-strong)] shrink-0"
             style={{ background: "var(--brand-soft)" }}
@@ -232,7 +232,7 @@ function NavLink({ item, active, primary }: { item: NavItem; active: boolean; pr
   return (
     <Link
       to={item.to}
-      className={`relative flex items-center gap-3 px-3 py-[11px] rounded-lg text-[14.5px] font-medium whitespace-nowrap transition-all ${
+      className={`relative flex items-center gap-3 px-3 py-2.5 rounded-sm text-[12px] font-medium whitespace-nowrap transition-all ${
         active
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-[color:var(--panel-2)]"

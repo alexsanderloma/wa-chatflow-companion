@@ -12,8 +12,8 @@ export function AgentStatusCard({
   const sub = status === "connected" ? "respondendo automaticamente" : status === "connecting" ? "preparando conexão" : "configure a conexão";
   const dotColor = status === "connected" ? "var(--success)" : status === "connecting" ? "var(--warning)" : "var(--destructive)";
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
-      <h3 className="font-display text-[15px] font-semibold">Status do Agente</h3>
+    <div className="rounded border border-border bg-card p-4">
+      <h3 className="font-display text-[14px] font-medium">Status do Agente</h3>
       <p className="text-xs text-muted-foreground mb-4">tempo real</p>
       <div className="flex items-center gap-3.5 pb-4 border-b border-border">
         <div className="size-13 w-[52px] h-[52px] rounded-lg grid place-items-center text-brand bg-brand-soft">

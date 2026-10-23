@@ -18,7 +18,7 @@ import { brand } from "@/config/brand";
 import { LeadDrawer, type LeadCard, type Stage, type Member } from "@/components/crm/lead-drawer";
 
 export const Route = createFileRoute("/app/crm")({
-  head: () => ({ meta: [{ title: `${brand.name} — CRM Kanban` }] }),
+  head: () => ({ meta: [{ title: `${brand.name} — CRM Kanban` }, { name: "description", content: "Acompanhe seus contatos e negociações no CRM Kanban da FLOWA." }, { property: "og:title", content: `${brand.name} — CRM Kanban` }, { property: "og:description", content: "Acompanhe seus contatos e negociações no CRM Kanban da FLOWA." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: KanbanPage,
 });
 
@@ -133,7 +133,7 @@ function KanbanPage() {
   const activeCard = activeId ? cards.find((c) => c.id === activeId) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="crm-board min-w-0 space-y-4">
       <header className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="flex items-center gap-2">CRM Kanban <HelpTip text="Funil visual de vendas. Arraste cards entre etapas (Novo lead → Qualificado → Proposta → Fechado) para acompanhar a evolução de cada contato." /></h1>
@@ -146,7 +146,7 @@ function KanbanPage() {
       </header>
 
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(${Math.max(stages.length,1)}, minmax(280px,1fr))`, overflowX: "auto" }}>
+        <div className="kanban-live-grid grid gap-3 max-w-full" style={{ gridTemplateColumns: `repeat(${Math.max(stages.length,1)}, minmax(280px,1fr))`, overflowX: "auto" }}>
           {stages.map((col) => (
             <Column key={col.id} stage={col} count={(byStage[col.id] ?? []).length}
               onEdit={() => setEditingStage(col)} onDelete={() => deleteStage(col.id)}>
@@ -188,12 +188,12 @@ function Column({ stage, count, children, onEdit, onDelete }:
   const { attributes, listeners, setNodeRef: setHandleRef } = useDraggable({ id: `stage:${stage.id}` });
   return (
     <div ref={setColRef}
-      className={`rounded-2xl border bg-[var(--panel)] p-4 min-h-[480px] transition-colors ${
+      className={`kanban-column rounded border bg-background p-3 min-h-[420px] transition-colors ${
         isOver ? "border-[var(--brand)]/60" : "border-[var(--border)]"
       }`}>
       <div ref={setHandleRef} {...attributes} {...listeners}
         className="flex items-center gap-2 mb-4 pb-3 border-b border-[var(--border)] cursor-grab">
-        <span className="size-2.5 rounded-full" style={{ background: stage.cor, boxShadow: `0 0 8px ${stage.cor}` }} />
+        <span className="size-2.5 rounded-full" style={{ background: stage.cor, opacity: 0.9 }} />
         <b className="font-display text-[15px]">{stage.nome}</b>
         <span className="ml-1 text-[11px] text-muted-foreground bg-[var(--panel-2)] px-2 py-0.5 rounded-full">{count}</span>
         <DropdownMenu>
@@ -227,13 +227,13 @@ function KCard({ card, onClick }: { card: LeadCard; onClick: () => void }) {
 function CardBody({ card, dragging }: { card: LeadCard; dragging?: boolean }) {
   const time = new Date(card.ultima_em);
   return (
-    <div className={`rounded-xl border bg-[var(--panel-2)] p-4 transition-all ${
+    <div className={`kanban-lead rounded-sm border bg-card p-3 transition-all ${
       dragging ? "shadow-2xl ring-2 ring-[var(--brand)]/40 rotate-1 border-[var(--brand)]/40" : "border-[var(--border)] hover:border-[var(--brand)]/30"
     }`}>
       <div className="flex items-start gap-3">
-        <InitialsAvatar name={card.nome || card.numero} size={36} />
+        <InitialsAvatar name={card.nome || card.numero} size={28} />
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold truncate">{card.nome || card.numero}</div>
+          <div className="text-[13px] font-medium truncate">{card.nome || card.numero}</div>
           <div className="text-[11px] text-muted-foreground font-mono truncate">{card.numero}</div>
         </div>
       </div>
@@ -247,7 +247,7 @@ function CardBody({ card, dragging }: { card: LeadCard; dragging?: boolean }) {
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--border)]">
+      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--border)]">
         {card.valor != null && Number(card.valor) > 0 && (
           <span className="font-display font-bold text-[14px] text-[var(--brand-text)]">
             R$ {Number(card.valor).toLocaleString("pt-BR")}

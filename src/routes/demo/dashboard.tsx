@@ -29,7 +29,7 @@ function DemoDashboard() {
   const last = [...demoMensagens].sort((a, b) => +b.quando - +a.quando).slice(0, 8);
   const csatMedia = (demoCsat.reduce((a, b) => a + b.score, 0) / demoCsat.length).toFixed(1);
   return (
-    <div className="space-y-5">
+    <div className="analytics-dashboard space-y-4">
       <header className="grid sm:grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">
           <h1 className="font-display text-xl sm:text-2xl font-bold flex items-center gap-2">Dashboard <HelpTip text="Visão geral do dia: agendamentos, conversas, conversão e mensagens recentes. Tudo o que importa para o gestor em uma tela." /></h1>
@@ -39,14 +39,14 @@ function DemoDashboard() {
           <span className="size-2 rounded-full bg-success" /> Vivi conectada
         </div>
       </header>
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2.5 grid-cols-2 lg:grid-cols-4">
         <KpiCard accent icon={<MessageCircle className="size-4" />} label="Conversas hoje" value={42} trend="+24% vs ontem" />
         <KpiCard icon={<Bot className="size-4" />} label="IA respondeu" value={38} trend="89% no automático" />
         <KpiCard icon={<Calendar className="size-4" />} label="Agendamentos" value={demoAgendamentos.length} trend="próximos 7 dias" />
         <KpiCard icon={<Star className="size-4" />} label="CSAT médio" value={`${csatMedia}/5`} trend={`${demoCsat.length} avaliações`} />
       </div>
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-4">
-        <div className="min-w-0 rounded-lg border border-border bg-card p-5">
+        <div className="min-w-0 rounded border border-border bg-card p-4">
           <h3 className="font-display text-[15px] font-semibold">Atendimentos · 14 dias</h3>
           <p className="text-xs text-muted-foreground mb-3">recebidas vs respondidas pela IA</p>
           <MiniAreaChart data={series} />
@@ -55,7 +55,7 @@ function DemoDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-[1.2fr_1fr] gap-4">
-        <div className="min-w-0 rounded-lg border border-border bg-card p-5">
+        <div className="min-w-0 rounded border border-border bg-card p-4">
           <h3 className="font-display text-[15px] font-semibold flex items-center gap-2">
             <Calendar className="size-4 text-[var(--brand-text)]" /> Próximos agendamentos
           </h3>
@@ -80,7 +80,7 @@ function DemoDashboard() {
             ))}
           </div>
         </div>
-        <div className="min-w-0 rounded-lg border border-border bg-card p-5">
+        <div className="min-w-0 rounded border border-border bg-card p-4">
           <h3 className="font-display text-[15px] font-semibold">Últimas mensagens</h3>
           <p className="text-xs text-muted-foreground mb-2">atividade recente</p>
           <MessageTimeline items={last.slice(0, 6).map((m) => ({ id: m.id, nome: m.nome, autor: m.autor, texto: m.texto, quando: m.quando }))} />

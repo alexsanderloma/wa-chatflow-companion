@@ -55,7 +55,7 @@ const mobileItems: MobileNavItem[] = [
 function DemoLayout() {
   const loc = useLocation();
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="workspace-root min-h-screen flex flex-col bg-background text-foreground">
       <header className="border-b border-[color:var(--hairline)] bg-[color:var(--panel)]/85 backdrop-blur-xl px-4 py-2.5 text-[12.5px] md:text-[13.5px] flex items-center justify-between gap-3 sticky top-0 z-20">
         <div className="flex items-center gap-2 min-w-0">
           <Sparkles className="size-4 text-[color:var(--brand)] shrink-0" />
@@ -82,16 +82,16 @@ function DemoLayout() {
       </div>
 
       <div className="flex flex-1 flex-col md:flex-row">
-        <aside className="hidden md:flex w-[260px] min-h-screen border-r border-[color:var(--hairline)] bg-[color:var(--sidebar-bg)] flex-col">
-          <div className="px-5 py-5 flex items-center gap-3 border-b border-[color:var(--hairline)]">
+        <aside className="workspace-sidebar hidden md:flex w-[214px] shrink-0 min-h-screen border-r border-[color:var(--hairline)] bg-[color:var(--sidebar-bg)] flex-col">
+          <div className="px-4 py-5 flex items-center gap-2.5 border-b border-[color:var(--hairline)]">
             <BrandMark className="size-10" />
             <div className="min-w-0">
-              <div className="font-display font-extrabold tracking-normal truncate text-[16px]">{brand.name}</div>
+              <div className="font-display font-medium tracking-normal truncate text-[16px]">{brand.name}</div>
               <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground truncate -mt-0.5">DEMO · Clínica Vitalis</div>
             </div>
           </div>
 
-          <nav className="p-3 flex-1 overflow-y-auto space-y-5">
+          <nav className="p-2.5 flex-1 overflow-y-auto space-y-5">
             {sections.map((sec) => (
               <div key={sec.label}>
                 <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
@@ -105,7 +105,7 @@ function DemoLayout() {
                       <Link
                         key={it.to}
                         to={it.to}
-                        className={`relative flex items-center gap-3 px-3 py-[11px] rounded-lg text-[14.5px] font-medium whitespace-nowrap transition-all ${
+                        className={`relative flex items-center gap-3 px-3 py-2.5 rounded-sm text-[12px] font-medium whitespace-nowrap transition-all ${
                           active ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-[color:var(--panel-2)]"
                         }`}
                         style={
@@ -139,7 +139,7 @@ function DemoLayout() {
           </nav>
 
           <div className="p-3 border-t border-[color:var(--hairline)]">
-            <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-[color:var(--panel-2)] border border-[color:var(--hairline)]">
+            <div className="flex items-center gap-3 px-2 py-2 rounded-sm bg-[color:var(--panel-2)] border border-[color:var(--hairline)]">
               <div
                 className="size-9 rounded-full grid place-items-center text-[13px] font-bold text-[color:var(--brand-text)] ring-1 ring-[color:var(--hairline-strong)] shrink-0"
                 style={{ background: "var(--brand-soft)" }}
@@ -156,7 +156,7 @@ function DemoLayout() {
             </div>
           </div>
         </aside>
-        <main className="flex-1 px-4 pt-4 pb-28 md:p-8 md:pb-8 max-w-7xl w-full mx-auto"><Outlet /></main>
+        <main className="workspace-main min-w-0 flex-1 px-4 pt-4 pb-28 md:px-6 md:py-5 md:pb-8 w-full mx-auto"><Outlet /></main>
       </div>
 
       <MobileBottomNav items={mobileItems} accent="var(--brand)" />

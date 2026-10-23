@@ -7,16 +7,16 @@ import { Sparkles } from "lucide-react";
 import { demoCards, type DemoCard } from "@/lib/demo-data";
 
 export const Route = createFileRoute("/demo/crm")({
-  head: () => ({ meta: [{ title: `${brand.name} — CRM (demo)` }] }),
+  head: () => ({ meta: [{ title: `${brand.name} — CRM de demonstração` }, { name: "description", content: "Explore o CRM Kanban de demonstração da FLOWA." }, { property: "og:title", content: `${brand.name} — CRM de demonstração` }, { property: "og:description", content: "Explore o CRM Kanban de demonstração da FLOWA." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: CrmDemo,
 });
 
 type Status = "conversas" | "negociando" | "ganho" | "perda";
 const COLUMNS: { id: Status; label: string; color: string }[] = [
-  { id: "conversas", label: "Conversas", color: "#22D3EE" },
-  { id: "negociando", label: "Negociando", color: "#FFB020" },
-  { id: "ganho", label: "Ganho", color: "#25D366" },
-  { id: "perda", label: "Perda", color: "#FF5A5A" },
+  { id: "conversas", label: "Conversas", color: "var(--chart-2)" },
+  { id: "negociando", label: "Negociando", color: "var(--brand)" },
+  { id: "ganho", label: "Ganho", color: "var(--success)" },
+  { id: "perda", label: "Perda", color: "var(--destructive)" },
 ];
 
 function CrmDemo() {
@@ -27,7 +27,7 @@ function CrmDemo() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="crm-board space-y-4">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">
           <h1 className="font-display text-xl sm:text-2xl font-bold flex items-center gap-2">CRM Kanban <HelpTip text="Pipeline visual: do primeiro contato até o agendamento confirmado. Veja em qual etapa cada lead está parado." /></h1>
@@ -37,9 +37,9 @@ function CrmDemo() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {COLUMNS.map((col) => (
-          <div key={col.id} className="rounded-2xl border border-border bg-card p-3.5 min-h-[420px]">
+          <div key={col.id} className="kanban-column rounded border border-border bg-background p-3 min-h-[360px]">
             <div className="flex items-center gap-2 mb-3.5">
-              <span className="size-2.5 rounded-full" style={{ background: col.color, boxShadow: `0 0 8px ${col.color}` }} />
+              <span className="size-2.5 rounded-full" style={{ background: col.color, opacity: 0.9 }} />
               <b className="font-display text-[13.5px]">{col.label}</b>
               <span className="ml-auto text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{byStatus[col.id].length}</span>
             </div>
@@ -58,9 +58,9 @@ function CrmDemo() {
 
 function CardBody({ card }: { card: DemoCard }) {
   return (
-    <div className="rounded-xl border border-border bg-muted p-3 transition-all hover:border-border">
+    <div className="kanban-lead rounded-sm border border-border bg-card p-3 transition-all hover:border-border">
       <div className="flex items-center gap-2.5">
-        <InitialsAvatar name={card.nome || card.numero} size={34} />
+        <InitialsAvatar name={card.nome || card.numero} size={28} />
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold truncate">{card.nome}</div>
           <div className="text-[10.5px] text-muted-foreground font-mono truncate">{card.numero}</div>
@@ -71,11 +71,11 @@ function CardBody({ card }: { card: DemoCard }) {
       )}
       <div className="flex items-center gap-2 mt-2.5">
         {card.valor != null && (
-          <span className="font-display font-bold text-[13px] text-[#A3E635]">
+          <span className="font-display font-bold text-[13px] text-brand">
             R$ {Number(card.valor).toLocaleString("pt-BR")}
           </span>
         )}
-        <span className="text-[9.5px] font-bold text-[#00E676] bg-[rgba(37,211,102,.12)] px-1.5 py-0.5 rounded-md flex items-center gap-1">
+        <span className="text-[9.5px] font-bold text-brand bg-brand-soft px-1.5 py-0.5 rounded-md flex items-center gap-1">
           <Sparkles className="size-2.5" /> IA
         </span>
         <span className="ml-auto text-[10.5px] text-muted-foreground">

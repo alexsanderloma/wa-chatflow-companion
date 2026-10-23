@@ -149,26 +149,26 @@ function Dashboard() {
   const totalConv = useMemo(() => series.reduce((a, b) => a + b.a, 0), [series]);
 
   return (
-    <div className="space-y-6">
+    <div className="analytics-dashboard space-y-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="font-display text-[26px] font-extrabold  flex items-center gap-2">Dashboard <HelpTip text="Visão geral do seu atendimento: KPIs do dia, últimas mensagens recebidas e conversas que precisam de você." /></h1>
+          <h1 className="font-display text-[24px] font-medium  flex items-center gap-2">Dashboard <HelpTip text="Visão geral do seu atendimento: KPIs do dia, últimas mensagens recebidas e conversas que precisam de você." /></h1>
           <p className="text-sm text-muted-foreground">Visão geral · {labelPeriod(period, range)}</p>
         </div>
         <PeriodPicker value={period} onChange={setPeriod} from={from} to={to} setFrom={setFrom} setTo={setTo} status={status} />
       </header>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2.5 grid-cols-2 lg:grid-cols-4">
         <KpiCard accent icon={<MessageCircle className="size-4" />} label="Conversas" value={totalConv} trend={`${stats.recebidas} recebidas`} />
         <KpiCard icon={<Bot className="size-4" />} label="Resolvidas pela IA" value={stats.respondidasIa} trend={`${taxaIa}% no automático`} />
         <KpiCard icon={<Target className="size-4" />} label="Em negociação" value={stats.negociando} trend={`${stats.conversas} em conversa`} />
         <KpiCard icon={<DollarSign className="size-4" />} label="Receita (ganhos)" value={`R$ ${stats.receita.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} trend={`${stats.ganho} ganhos`} />
       </div>
 
-      <div className="grid lg:grid-cols-[1.6fr_1fr] gap-5">
-        <div className="rounded-lg border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6">
+      <div className="grid lg:grid-cols-[1.6fr_1fr] gap-3">
+        <div className="rounded border border-[color:var(--hairline)] bg-[color:var(--panel)] p-4">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-display text-[17px] font-semibold">Atendimentos</h3>
+            <h3 className="font-display text-[14px] font-medium">Atendimentos</h3>
             <Trophy className="size-4 text-muted-foreground" />
           </div>
           <p className="text-xs text-muted-foreground mb-4">recebidas vs respondidas pela IA</p>
@@ -177,10 +177,10 @@ function Dashboard() {
         <PrecisaDeVoceCard paradas={paradas} followups={followups} novos={novos} />
       </div>
 
-      <div className="rounded-lg border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6">
+      <div className="rounded border border-[color:var(--hairline)] bg-[color:var(--panel)] p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="font-display text-[17px] font-semibold">Últimas mensagens</h3>
+            <h3 className="font-display text-[14px] font-medium">Últimas mensagens</h3>
             <p className="text-xs text-muted-foreground">atividade recente</p>
           </div>
           <KanbanSquare className="size-4 text-muted-foreground" />
@@ -205,7 +205,7 @@ function PeriodPicker({ value, onChange, from, to, setFrom, setTo, status }: {
 }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <div className="inline-flex rounded-lg border border-[color:var(--hairline)] bg-[color:var(--panel)] p-1">
+      <div className="inline-flex rounded border border-[color:var(--hairline)] bg-[color:var(--panel)] p-1">
         {(["today", "7d", "30d", "custom"] as Period[]).map((p) => (
           <Button variant="ghost" key={p} onClick={() => onChange(p)}
             className={`px-3 py-1.5 text-[13px] font-semibold rounded-md transition-colors ${
@@ -233,10 +233,10 @@ function PrecisaDeVoceCard({ paradas, followups, novos }: {
   novos: number;
 }) {
   return (
-    <div className="rounded-lg border border-[color:var(--hairline)] bg-[color:var(--panel)] p-6 flex flex-col">
+    <div className="rounded border border-[color:var(--hairline)] bg-[color:var(--panel)] p-4 flex flex-col">
       <div className="flex items-center gap-2 mb-1">
         <AlertTriangle className="size-4 text-warning" />
-        <h3 className="font-display text-[17px] font-semibold">Precisa de você</h3>
+        <h3 className="font-display text-[14px] font-medium">Precisa de você</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-4">o que merece prioridade hoje</p>
 
