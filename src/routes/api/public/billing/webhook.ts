@@ -118,29 +118,62 @@ async function applyEvent(evt: NormalizedBillingEvent) {
   if (evt.periodEnd) subPayload.current_period_end = evt.periodEnd;
   if (subStatus === "canceled") subPayload.canceled_at = new Date().toISOString();
 
-  // Upsert por company_id (1 assinatura por empresa).
-  await supabase.from("subscription").upsert(subPayload, { onConflict: "company_id" });
+  // 1) Mesma assinatura do provedor → atualiza; 2) senão a assinatura corrente
+  // da empresa; 3) senão cria nova. Canceladas ficam como histórico.
+  const CURRENT = ["trialing", "active", "past_due", "incomplete", "paused"];
+  let targetId: string | null = null;
+  if (evt.externalSubscriptionId) {
+    const { data: byExt, error: extErr } = await supabase
+      .from("subscription")
+      .select("id")
+      .eq("provider", evt.provider)
+      .eq("external_subscription_id", evt.externalSubscriptionId)
+      .maybeSingle();
+    if (extErr) throw new Error(`subscription lookup (externo): ${extErr.message}`);
+    targetId = byExt?.id ?? null;
+  }
+  if (!targetId) {
+    const { data: cur, error: curErr } = await supabase
+      .from("subscription")
+      .select("id")
+      .eq("company_id", companyId)
+      .in("status", CURRENT)
+      .maybeSingle();
+    if (curErr) throw new Error(`subscription lookup (corrente): ${curErr.message}`);
+    targetId = cur?.id ?? null;
+  }
+  if (targetId) {
+    const { error: updErr } = await supabase.from("subscription").update(subPayload).eq("id", targetId);
+    if (updErr) throw new Error(`subscription update: ${updErr.message}`);
+  } else {
+    const { error: insErr } = await supabase.from("subscription").insert(subPayload);
+    if (insErr) throw new Error(`subscription insert: ${insErr.message}`);
+  }
 
   if (companyStatus) {
-    await supabase
+    const { error: compErr } = await supabase
       .from("company")
       .update({ status_cobranca: companyStatus })
       .eq("id", companyId);
+    if (compErr) throw new Error(`company status: ${compErr.message}`);
   }
 
   // Recarrega créditos do plano quando assinatura ativa/renova
   if (subStatus === "active" && planId) {
-    const { data: planRow } = await supabase.from("plan").select("slug").eq("id", planId).maybeSingle();
+    const { data: planRow, error: planErr } = await supabase.from("plan").select("slug").eq("id", planId).maybeSingle();
+    if (planErr) throw new Error(`plan lookup: ${planErr.message}`);
     if (planRow?.slug) {
-      await supabase.rpc("topup_plan_credits", { _company_id: companyId, _plan_slug: planRow.slug });
+      const { error: topErr } = await supabase.rpc("topup_plan_credits", { _company_id: companyId, _plan_slug: planRow.slug });
+      if (topErr) throw new Error(`credit topup: ${topErr.message}`);
     }
   }
 
-  await supabase.from("billing_event_log").insert({
+  const { error: logErr } = await supabase.from("billing_event_log").insert({
     ...logRow,
     matched_company_id: companyId,
     processed: true,
   });
+  if (logErr) throw new Error(`event log: ${logErr.message}`);
 }
 
 export const Route = createFileRoute("/api/public/billing/webhook")({
