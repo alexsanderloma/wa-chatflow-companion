@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { Loader2, MessageSquareText } from "lucide-react";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import { brand, supportWhatsappUrl, supportWhatsappDisplay } from "@/config/brand";
@@ -20,7 +20,7 @@ export function RoutePendingComponent() {
   );
 }
 
-export function RouteErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
