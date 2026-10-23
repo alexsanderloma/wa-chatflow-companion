@@ -166,7 +166,7 @@ function FornecedoresPage() {
             <tbody>
               {data.items.map((it: any) => {
                 const rule = data.margins.find((m) => m.categoria === it.categoria);
-                const sug = it.custo_cents != null && rule ? suggestedPriceCents(Number(it.custo_cents), rule.custos_extras_cents, rule.margem_liquida_pct) : null;
+                const sug = it.custo_cents != null && rule && rule.margem_liquida_pct > 0 ? suggestedPriceCents(Number(it.custo_cents), rule.custos_extras_cents, rule.margem_liquida_pct) : null;
                 return (
                   <tr key={it.id} className="border-t border-border">
                     <td className="py-2">{it.produto}</td>
