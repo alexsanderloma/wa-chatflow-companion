@@ -17,9 +17,14 @@ import { TemplatesTab } from "@/components/config/templates-tab";
 import { HorariosTab } from "@/components/config/horarios-tab";
 import { listAuditLog, exportLgpd } from "@/lib/security.functions";
 import { finStatus, enableFinanceiro } from "@/lib/financeiro.functions";
+import { planChangeSearch, CHECKOUT_CURRENT_STATUSES } from "@/lib/checkout-policy";
 
 export const Route = createFileRoute("/app/configuracoes")({
-  head: () => ({ meta: [{ title: `${brand.name} — Configurações` }] }),
+  head: () => ({ meta: [{ title: `${brand.name} — Configurações` },
+    { name: "description", content: "Configurações da empresa e gestão do plano FLOWA." },
+    { property: "og:title", content: `${brand.name} — Configurações` },
+    { property: "og:description", content: "Configurações e orientação para troca de plano FLOWA." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   beforeLoad: ({ context }: any) => {
     const r = context?.membership?.role;
     if (r === "atendente") throw redirect({ to: "/app/dashboard" });
@@ -57,8 +62,9 @@ function ConfigPage() {
       void (async () => {
         const { data } = await supabase
           .from("subscription")
-          .select("*, plan:plan(id,nome,preco_cents,moeda,intervalo)")
+          .select("*, plan:plan(id,slug,nome,preco_cents,moeda,intervalo)")
           .eq("company_id", companyId)
+          .in("status", CHECKOUT_CURRENT_STATUSES)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -455,7 +461,7 @@ function PlanoCard({ company, sub }: { company: any; sub: any }) {
         <h2 className="font-semibold">Gerenciar pagamento</h2>
         <p className="text-sm text-muted-foreground">
           {isActive
-            ? "Você pode trocar de plano ou atualizar o cartão a qualquer momento."
+            ? "Compare os planos e solicite ao suporte a alteração segura do plano e da cobrança."
             : "Cadastre seu cartão para ativar o plano. Pode cancelar quando quiser."}
         </p>
         {sub?.payment_method_brand && (
@@ -465,9 +471,9 @@ function PlanoCard({ company, sub }: { company: any; sub: any }) {
         )}
         <div className="flex flex-wrap gap-2 pt-1">
           <Button asChild>
-            <Link to="/app/checkout" search={{ plano: sub?.plan?.nome?.toLowerCase() } as any}>
+            <Link to="/app/checkout" search={planChangeSearch(sub?.plan, company?.selected_plan_slug, isActive || (isTrial && !isExpired))}>
               <CreditCard className="size-4 mr-1.5" />
-              {isActive ? "Trocar de plano" : "Cadastrar cartão e ativar"}
+              {isActive || (isTrial && !isExpired) ? "Trocar de plano" : "Cadastrar cartão e ativar"}
             </Link>
           </Button>
         </div>
