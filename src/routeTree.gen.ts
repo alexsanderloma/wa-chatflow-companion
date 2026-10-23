@@ -59,6 +59,7 @@ import { Route as MasterPainelRouteImport } from './routes/master/painel'
 import { Route as MasterPlanosRouteImport } from './routes/master/planos'
 import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google-callback'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp-webhook'
+import { Route as ApiSupabaseProxySplatRouteImport } from './routes/api/supabase-proxy/$'
 import { Route as AppAgenteAvancadoRouteImport } from './routes/app/agente.avancado'
 import { Route as ApiPublicBillingWebhookRouteImport } from './routes/api/public/billing/webhook'
 import { Route as ApiPublicHooksProcessCampaignsRouteImport } from './routes/api/public/hooks/process-campaigns'
@@ -317,6 +318,11 @@ const ApiPublicWhatsappWebhookRoute =
     path: '/api/public/whatsapp-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiSupabaseProxySplatRoute = ApiSupabaseProxySplatRouteImport.update({
+  id: '/api/supabase-proxy/$',
+  path: '/api/supabase-proxy/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppAgenteAvancadoRoute = AppAgenteAvancadoRouteImport.update({
   id: '/avancado',
   path: '/avancado',
@@ -400,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/master/': typeof MasterIndexRoute
   '/api/public/google-callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/whatsapp-webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/supabase-proxy/$': typeof ApiSupabaseProxySplatRoute
   '/app/agente/avancado': typeof AppAgenteAvancadoRoute
   '/api/public/billing/webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/hooks/process-campaigns': typeof ApiPublicHooksProcessCampaignsRoute
@@ -456,6 +463,7 @@ export interface FileRoutesByTo {
   '/master': typeof MasterIndexRoute
   '/api/public/google-callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/whatsapp-webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/supabase-proxy/$': typeof ApiSupabaseProxySplatRoute
   '/app/agente/avancado': typeof AppAgenteAvancadoRoute
   '/api/public/billing/webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/hooks/process-campaigns': typeof ApiPublicHooksProcessCampaignsRoute
@@ -515,6 +523,7 @@ export interface FileRoutesById {
   '/master/': typeof MasterIndexRoute
   '/api/public/google-callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/whatsapp-webhook': typeof ApiPublicWhatsappWebhookRoute
+  '/api/supabase-proxy/$': typeof ApiSupabaseProxySplatRoute
   '/app/agente/avancado': typeof AppAgenteAvancadoRoute
   '/api/public/billing/webhook': typeof ApiPublicBillingWebhookRoute
   '/api/public/hooks/process-campaigns': typeof ApiPublicHooksProcessCampaignsRoute
@@ -575,6 +584,7 @@ export interface FileRouteTypes {
     | '/master/'
     | '/api/public/google-callback'
     | '/api/public/whatsapp-webhook'
+    | '/api/supabase-proxy/$'
     | '/app/agente/avancado'
     | '/api/public/billing/webhook'
     | '/api/public/hooks/process-campaigns'
@@ -631,6 +641,7 @@ export interface FileRouteTypes {
     | '/master'
     | '/api/public/google-callback'
     | '/api/public/whatsapp-webhook'
+    | '/api/supabase-proxy/$'
     | '/app/agente/avancado'
     | '/api/public/billing/webhook'
     | '/api/public/hooks/process-campaigns'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/master/'
     | '/api/public/google-callback'
     | '/api/public/whatsapp-webhook'
+    | '/api/supabase-proxy/$'
     | '/app/agente/avancado'
     | '/api/public/billing/webhook'
     | '/api/public/hooks/process-campaigns'
@@ -712,6 +724,7 @@ export interface RootRouteChildren {
   CsatTokenRoute: typeof CsatTokenRoute
   ApiPublicGoogleCallbackRoute: typeof ApiPublicGoogleCallbackRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
+  ApiSupabaseProxySplatRoute: typeof ApiSupabaseProxySplatRoute
   ApiPublicBillingWebhookRoute: typeof ApiPublicBillingWebhookRoute
   ApiPublicHooksProcessCampaignsRoute: typeof ApiPublicHooksProcessCampaignsRoute
   ApiPublicV1SplatRoute: typeof ApiPublicV1SplatRoute
@@ -1071,6 +1084,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/supabase-proxy/$': {
+      id: '/api/supabase-proxy/$'
+      path: '/api/supabase-proxy/$'
+      fullPath: '/api/supabase-proxy/$'
+      preLoaderRoute: typeof ApiSupabaseProxySplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/agente/avancado': {
       id: '/app/agente/avancado'
       path: '/avancado'
@@ -1240,6 +1260,7 @@ const rootRouteChildren: RootRouteChildren = {
   CsatTokenRoute: CsatTokenRoute,
   ApiPublicGoogleCallbackRoute: ApiPublicGoogleCallbackRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
+  ApiSupabaseProxySplatRoute: ApiSupabaseProxySplatRoute,
   ApiPublicBillingWebhookRoute: ApiPublicBillingWebhookRoute,
   ApiPublicHooksProcessCampaignsRoute: ApiPublicHooksProcessCampaignsRoute,
   ApiPublicV1SplatRoute: ApiPublicV1SplatRoute,

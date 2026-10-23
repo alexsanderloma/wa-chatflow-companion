@@ -1,5 +1,15 @@
 export const AUTH_TIMEOUT_MS = 12_000;
 
+export const AUTH_CONNECTION_MESSAGE = 'Não foi possível conectar ao FLOWA. Verifique sua conexão e tente novamente em instantes.';
+
+export function isAuthConnectionError(error: unknown): boolean {
+  if (error instanceof AuthTimeoutError || error instanceof TypeError) return true;
+  if (!error || typeof error !== 'object') return false;
+  const value = error as { name?: string; message?: string; status?: number };
+  return value.name === 'AuthRetryableFetchError' || value.status === 502 || value.status === 503 || value.status === 504 ||
+    /failed to fetch|fetch failed|network|timeout|conexão|conectar/i.test(value.message ?? '');
+}
+
 export class AuthTimeoutError extends Error {
   constructor() { super("auth_timeout"); this.name = "AuthTimeoutError"; }
 }

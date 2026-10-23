@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { withTimeout, AuthTimeoutError, resolvePostAuthDestination } from "./auth-timeout.ts";
+import { withTimeout, AuthTimeoutError, resolvePostAuthDestination, isAuthConnectionError } from "./auth-timeout.ts";
+
+test('connection failures are distinguished from invalid credentials', () => {
+  assert.equal(isAuthConnectionError(new TypeError('Failed to fetch')), true);
+  assert.equal(isAuthConnectionError({ name: 'AuthRetryableFetchError' }), true);
+  assert.equal(isAuthConnectionError({ status: 504 }), true);
+  assert.equal(isAuthConnectionError({ message: 'Invalid login credentials', status: 400 }), false);
+});
 
 const never = () => new Promise(() => {});
 

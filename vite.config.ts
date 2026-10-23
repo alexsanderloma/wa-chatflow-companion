@@ -7,6 +7,23 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  vite: {
+    plugins: [{
+      name: 'flowa-connectivity-client',
+      enforce: 'pre',
+      transform(code, id) {
+        if (id.includes('/src/') && code.includes('@/integrations/supabase/client')) {
+          return code.replace(/(['"])@\/integrations\/supabase\/client\1/g, '$1@/lib/supabase-connectivity$1');
+        }
+      },
+      resolveId(source, importer) {
+        if (source === '@/integrations/supabase/client' ||
+          (source === './client' && importer?.replaceAll('\\', '/').endsWith('/integrations/supabase/auth-attacher.ts'))) {
+          return `${process.cwd()}/src/lib/supabase-connectivity.ts`;
+        }
+      },
+    }],
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
