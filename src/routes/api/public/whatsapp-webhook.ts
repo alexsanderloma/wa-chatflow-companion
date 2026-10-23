@@ -362,26 +362,25 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           }
 
           const { parts, stage, agendar, escalar } = parseAiOutput(rawReply, stages.map((s) => ({ nome: s.nome, tipo: s.tipo })));
-          const { escalationCustomerParts, hasUnmarkedHumanPromise, ESCALATION_FAILURE_REPLY } = await import("@/lib/human-escalation");
+          const { escalationCustomerParts, hasUnmarkedHumanPromise } = await import("@/lib/human-escalation");
           let finalParts = sanitizeAiParts(responderEmPartes ? parts : [parts.join(" ")]);
-          if (escalar) {
+          const escalationReason = escalar || (hasUnmarkedHumanPromise(finalParts)
+            ? "A IA indicou que a equipe precisa assumir o atendimento."
+            : null);
+          if (escalationReason) {
             const { escalateToHuman } = await import("@/lib/human-escalation.server");
             const result = await escalateToHuman(supabaseAdmin, instanceName, {
               companyId, userId, sourceMessageId: whatsappMessageId || inserted.id,
               numero: number, nome: cardRow?.nome || pushName || null,
-              motivo: escalar, ultimaMensagem: text,
+              motivo: escalationReason, ultimaMensagem: text,
               responsavelNome: cfg?.responsavel_escalonamento_nome || "",
               responsavelTelefone: cfg?.telefone_transferencia || "",
             });
             finalParts = escalationCustomerParts(finalParts, result);
-          } else if (hasUnmarkedHumanPromise(finalParts)) {
-            // Never convert free text into a notification: fail closed on a missing marker.
-            console.error("[escalation] model omitted required marker");
-            finalParts = [ESCALATION_FAILURE_REPLY];
           }
 
           // Cria evento no Google Agenda se a IA marcou [AGENDAR: ...]
-          if (agendar && !escalar && googleIntegration?.conectado) {
+          if (agendar && !escalationReason && googleIntegration?.conectado) {
             try {
               const { createCalendarEventForCompany } = await import("@/lib/google.server");
               await createCalendarEventForCompany(supabaseAdmin, companyId, {

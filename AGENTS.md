@@ -1,6 +1,6 @@
 # AGENTS.md
 
-- Human escalation uses a structured AI marker, an atomic durable claim-and-pause RPC and a single Evolution send by the claim winner; customer acknowledgements require both delivery acknowledgement and persisted success, so concurrent deliveries and failed alerts cannot create false transfer promises.
+- Human escalation uses a structured AI marker or an unmarked-promise safety fallback, both sharing an atomic durable claim-and-pause RPC and a single Evolution send by the claim winner; customer acknowledgements require both delivery acknowledgement and persisted success, so concurrent deliveries and failed alerts cannot create false transfer promises.
 
 - Brand identity (name, tagline, primary color, support contact) lives only in `src/config/brand.ts`; screens and server-side support messages import the shared values instead of hardcoding product names or contacts, so a rename touches one file.
 - Use the shared code-native `BrandMark` for product identity and semantic theme tokens for frontend colors; tenant colors must not override product navigation, so branding stays consistent while connection states remain distinct.
