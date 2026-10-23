@@ -77,9 +77,9 @@ test("unmarked human promises require escalation", () => {
 const webhook = readFileSync(new URL("../routes/api/public/whatsapp-webhook.ts", import.meta.url), "utf8");
 const decision = webhook.slice(webhook.indexOf("          const { escalationCustomerParts"), webhook.indexOf("          // Cria evento no Google Agenda"))
   .replace('await import("@/lib/human-escalation")', "helpers")
-  .replace('await import("@/lib/human-escalation.server")', "{ escalateToHuman }");
+  .replace('await import("@/lib/human-escalation.server")', "{ escalateToHuman: dispatch }");
 const runDecision = new (Object.getPrototypeOf(async function () {}).constructor)(
-  "parts", "escalar", "escalateToHuman", "helpers", "input",
+  "parts", "escalar", "dispatch", "helpers", "input",
   `const { companyId, userId, sourceMessageId: whatsappMessageId, numero: number, nome: pushName, ultimaMensagem: text } = input;
    const inserted = { id: 'crm-id' }, cardRow = null, supabaseAdmin = {}, instanceName = 'tenant-instance';
    const cfg = { responsavel_escalonamento_nome: input.responsavelNome, telefone_transferencia: input.responsavelTelefone };
