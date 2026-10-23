@@ -16,7 +16,7 @@ export async function escalateToHuman(admin: SupabaseClient<Database>, instanceN
       return data || null;
     },
     notify: async (phone, text) => {
-      const reply = await evoSendText(instanceName, phone, text);
+      const reply = await evoSendText(instanceName, phone, text, 15_000);
       if (!reply?.key?.id && !reply?.message?.key?.id) throw new Error("Notification not acknowledged");
     },
     finish: async (id, status, errorText) => {
