@@ -311,7 +311,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           }
 
           // Mídia: só é baixada/analisada aqui, depois de todas as saídas que impedem resposta.
-          if (media && shouldAnalyzeMedia({ hasMedia: true, replyAllowed: true })) {
+          if (media && shouldAnalyzeMedia({ hasMedia: true, optOut: false, paused: false, offHours: false, superseded: false, humanActive: false, noCredit: false, throttled: false })) {
             const { analyzeWhatsappMedia } = await import("@/lib/whatsapp-media.server");
             const analysis = await analyzeWhatsappMedia(instanceName, data, media);
             const safeText = crmTextFor(media, analysis);

@@ -160,3 +160,19 @@ export function aiUserTextFor(media: DetectedMedia, analysis: string | null): st
   }
   return "[O contato enviou um áudio que NÃO pôde ser transcrito. Diga com honestidade que não conseguiu ouvir o áudio e peça para escrever a mensagem. Não invente o conteúdo.]";
 }
+
+export interface MediaGateState {
+  hasMedia: boolean;
+  optOut: boolean;
+  paused: boolean;
+  offHours: boolean;
+  superseded: boolean;
+  humanActive: boolean;
+  noCredit: boolean;
+  throttled: boolean;
+}
+
+/** Download/análise só é permitido quando nenhuma saída bloqueia a resposta automática. */
+export function shouldAnalyzeMedia(s: MediaGateState): boolean {
+  return s.hasMedia && !s.optOut && !s.paused && !s.offHours && !s.superseded && !s.humanActive && !s.noCredit && !s.throttled;
+}
