@@ -73,16 +73,6 @@ function featureIcon(text: string) {
 function normalizeFeatureText(text: string) {
   return /n[úu]meros? de whatsapp/i.test(text) ? "1 número de WhatsApp" : text;
 }
-function buildCheckoutUrl(base: string, email?: string | null, companyId?: string | null) {
-  try {
-    const u = new URL(base);
-    if (email) u.searchParams.set("email", email);
-    if (companyId) u.searchParams.set("ref", companyId);
-    return u.toString();
-  } catch {
-    return base;
-  }
-}
 
 function CheckoutPage() {
   const ctx = Route.useRouteContext();
