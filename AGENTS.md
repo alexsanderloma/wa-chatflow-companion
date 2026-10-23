@@ -1,5 +1,7 @@
 # AGENTS.md
 
+- Checkout upgrade is explicit and support-only until provider updates and entitlement reconciliation are implemented together; ordinary payment reuses only matching-plan Asaas subscriptions, and durable subscription reservation blocks concurrent/uncertain duplicate creation.
+
 - Master plan mutations use a service-role-only RPC after assertSuper; lock the company and atomically preserve canceled subscription history, update entitlement and write existing audit_log, without calling external billing providers.
 
 - Application Supabase imports resolve through the hand-maintained connectivity wrapper, not edits to generated integrations; only live browser hosts use the allowlisted same-origin HTTP proxy, with the original session key and independent direct Realtime, so regeneration, preview authentication and RLS remain intact.

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { brand } from "@/config/brand";
+import { brand, supportWhatsappUrl } from "@/config/brand";
 import {
   Loader2, ShieldCheck, ArrowLeft, Check, TrendingUp, Crown, Smartphone,
   Users, MessageSquare, Headphones, Calendar, BarChart3, Webhook, Zap, ExternalLink, Sparkles, Lock,
@@ -305,7 +305,7 @@ function CheckoutPage() {
                 {upgradeMode ? <div className="space-y-4">
                   <h2 className="font-display text-xl font-bold">Solicitar alteração de plano</h2>
                   <p className="text-sm text-muted-foreground">{CHECKOUT_SUPPORT_MESSAGE}</p>
-                  <Button asChild disabled={!plano}><a href={`${brand.supportWhatsAppUrl}?text=${encodeURIComponent(`Olá! Quero alterar o plano da minha empresa ${ctx.company?.nome ?? ""} para ${plano?.nome ?? ""}. Por favor, confiram também a cobrança externa existente.`)}`} target="_blank" rel="noreferrer">Falar com o suporte <ExternalLink className="size-4" /></a></Button>
+                  <Button asChild disabled={!plano}><a href={`${supportWhatsappUrl}?text=${encodeURIComponent(`Olá! Quero alterar o plano da minha empresa ${ctx.company?.nome ?? ""} para ${plano?.nome ?? ""}. Por favor, confiram também a cobrança externa existente.`)}`} target="_blank" rel="noreferrer">Falar com o suporte <ExternalLink className="size-4" /></a></Button>
                   <p className="text-xs text-muted-foreground">Nenhum pagamento será aberto nesta tela. A solicitação ao suporte não confirma o upgrade.</p>
                 </div> : waiting ? (
                   <div className="space-y-3">
