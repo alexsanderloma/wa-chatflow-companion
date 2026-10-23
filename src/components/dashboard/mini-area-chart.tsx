@@ -11,7 +11,7 @@ export function MiniAreaChart({
   const pad = { t: 12, r: 10, b: 24, l: 30 };
   const inner = { w: w - pad.l - pad.r, h: h - pad.t - pad.b };
 
-  const { ptsA, ptsB, areaA, max } = useMemo(() => {
+  const { ptsA, ptsB, max } = useMemo(() => {
     const n = Math.max(data.length, 2);
     const max = Math.max(1, ...data.map((d) => Math.max(d.a, d.b ?? 0)));
     const x = (i: number) => pad.l + (inner.w * i) / (n - 1);
@@ -20,8 +20,7 @@ export function MiniAreaChart({
     const ptsB = data.some((d) => d.b !== undefined)
       ? data.map((d, i) => `${x(i)},${y(d.b ?? 0)}`).join(" ")
       : "";
-    const areaA = `${pad.l},${pad.t + inner.h} ${ptsA} ${pad.l + inner.w},${pad.t + inner.h}`;
-    return { ptsA, ptsB, areaA, max };
+    return { ptsA, ptsB, max };
   }, [data, inner.h, inner.w, pad.l, pad.t]);
 
   return (
@@ -42,7 +41,7 @@ export function MiniAreaChart({
         {data.map((point, i) => {
           const step = inner.w / Math.max(data.length, 1);
           const barHeight = (point.a / max) * inner.h;
-          return <rect key={`${point.label}-${i}`} x={pad.l + step * i + step * .2} y={pad.t + inner.h - barHeight} width={step * .55} height={barHeight} rx="1" fill={`url(#g-${id})`}><title>{point.label}: {point.a} {labelA}</title></rect>;
+          return <rect key={`${point.label}-${i}`} x={pad.l + step * i + step * .2} y={pad.t + inner.h - barHeight} width={step * .55} height={barHeight} rx="1" fill={`url(#g-${id})`}><title>{`${point.label}: ${point.a} ${labelA}`}</title></rect>;
         })}
         {data.length < 2 && <polyline points={ptsA} fill="none" stroke="var(--chart-1)" strokeWidth="2" />}
         {ptsB && (

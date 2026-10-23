@@ -243,7 +243,7 @@ html, body {
 .auth-feature > div:last-child > div:first-child { font-size: 11px; font-weight: 500; }
 .auth-feature > div:last-child > div:last-child { font-size: 10px; }
 .auth-brand-content > .flex:last-child { display: grid; gap: 8px; font-size: 10px; margin-top: 18px; }
-.brand-terrain { position: absolute; width: 100%; height: 500px; bottom: 0; left: 0; z-index: 0; pointer-events: none; opacity: .75; }
+.brand-terrain { position: absolute; width: 100%; height: 65%; bottom: 0; left: 0; z-index: 0; pointer-events: none; opacity: .75; }
 .terrain-contour { stroke: var(--hairline-strong); stroke-width: .7; }
 .terrain-cross { stroke: var(--border); stroke-width: .5; }
 .terrain-ridge { stroke: var(--brand); stroke-width: 1.3; }
@@ -258,7 +258,7 @@ html, body {
 .workspace-sidebar { background: var(--background); border-right-color: var(--editorial-rule); }
 .workspace-sidebar nav > div > div:first-child { font-size: 9px; }
 .workspace-sidebar nav a { min-height: 40px; }
-.workspace-sidebar nav a > span:last-child { font-size: 8px; }
+.workspace-sidebar nav a > span.ring-1 { font-size: 8px; }
 .workspace-main { max-width: 1600px; }
 .analytics-dashboard > header { padding-bottom: 16px; border-bottom: 1px solid var(--border); }
 .analytics-dashboard > header h1 { font-size: 23px; font-weight: 500; }
