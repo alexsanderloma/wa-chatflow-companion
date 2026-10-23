@@ -1594,6 +1594,221 @@ export type Database = {
           },
         ]
       }
+      supplier_catalog_items: {
+        Row: {
+          aprovado: boolean
+          atualizado_em: string
+          categoria: string
+          company_id: string
+          created_at: string
+          custo_cents: number | null
+          disponibilidade: string | null
+          fonte: string | null
+          id: string
+          marca: string | null
+          modelo: string | null
+          moeda: string
+          produto: string
+          supplier_id: string
+          update_id: string | null
+        }
+        Insert: {
+          aprovado?: boolean
+          atualizado_em?: string
+          categoria?: string
+          company_id: string
+          created_at?: string
+          custo_cents?: number | null
+          disponibilidade?: string | null
+          fonte?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          moeda?: string
+          produto: string
+          supplier_id: string
+          update_id?: string | null
+        }
+        Update: {
+          aprovado?: boolean
+          atualizado_em?: string
+          categoria?: string
+          company_id?: string
+          created_at?: string
+          custo_cents?: number | null
+          disponibilidade?: string | null
+          fonte?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          moeda?: string
+          produto?: string
+          supplier_id?: string
+          update_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_catalog_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_catalog_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_catalog_items_update_id_fkey"
+            columns: ["update_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_catalog_updates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_catalog_updates: {
+        Row: {
+          company_id: string
+          conteudo_bruto: string | null
+          created_at: string
+          erro: string | null
+          id: string
+          midia_metadata: Json
+          recebido_em: string
+          status: string
+          supplier_id: string
+          tipo: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          company_id: string
+          conteudo_bruto?: string | null
+          created_at?: string
+          erro?: string | null
+          id?: string
+          midia_metadata?: Json
+          recebido_em?: string
+          status?: string
+          supplier_id: string
+          tipo: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          conteudo_bruto?: string | null
+          created_at?: string
+          erro?: string | null
+          id?: string
+          midia_metadata?: Json
+          recebido_em?: string
+          status?: string
+          supplier_id?: string
+          tipo?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_catalog_updates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_catalog_updates_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_margin_rules: {
+        Row: {
+          categoria: string
+          company_id: string
+          custos_extras_cents: number
+          id: string
+          margem_liquida_pct: number
+          updated_at: string
+        }
+        Insert: {
+          categoria: string
+          company_id: string
+          custos_extras_cents?: number
+          id?: string
+          margem_liquida_pct: number
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string
+          company_id?: string
+          custos_extras_cents?: number
+          id?: string
+          margem_liquida_pct?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_margin_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          created_at: string
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string
+          ultima_atualizacao_em: string | null
+          updated_at: string
+          validade_horas: number
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone: string
+          ultima_atualizacao_em?: string | null
+          updated_at?: string
+          validade_horas?: number
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string
+          ultima_atualizacao_em?: string | null
+          updated_at?: string
+          validade_horas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
