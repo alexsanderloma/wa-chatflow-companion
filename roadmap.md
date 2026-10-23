@@ -11,4 +11,4 @@
 ## Complete brand and support cleanup
 - [x] Replace old brand on legal pages and their titles; include the current support contact.
 - [x] Use the shared support contact in WhatsApp error messages without changing integration behavior.
-- [ ] Audit remaining names and contacts; verify legal pages and support tests.
+- [x] Audit remaining names and contacts; legal titles/support links verified in the browser, all three brand/support tests passed; preserve integration contracts and the current domain. No publish.

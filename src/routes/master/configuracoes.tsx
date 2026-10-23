@@ -13,7 +13,14 @@ import { getSuperAdminEmails, setSuperAdminEmails } from "@/lib/master.functions
 import { getBillingWebhookInfo, listRecentBillingEvents } from "@/lib/billing.functions";
 
 export const Route = createFileRoute("/master/configuracoes")({
-  head: () => ({ meta: [{ title: `${brand.name} — Master Config` }] }),
+  head: () => ({ meta: [
+    { title: `${brand.name} — Configurações Master` },
+    { name: "description", content: `Configurações administrativas e integrações da ${brand.name}.` },
+    { property: "og:title", content: `${brand.name} — Configurações Master` },
+    { property: "og:description", content: `Configurações administrativas e integrações da ${brand.name}.` },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ConfigPage,
 });
 
@@ -150,7 +157,7 @@ function ConfigPage() {
                 </ol>
               </div>
               <div className="rounded-md border bg-muted/40 p-2.5">
-                <b>Vínculo cliente → empresa:</b> usamos o e-mail do comprador. O cadastro do cliente na Flowa precisa usar o
+                <b>Vínculo cliente → empresa:</b> usamos o e-mail do comprador. O cadastro do cliente na {brand.name} precisa usar o
                 <b> mesmo e-mail</b> da compra. Para identificar o plano, casamos pelo <code>slug</code> do plano ou pelo trecho final da
                 <code>checkout_url</code> com o <code>product_id</code> recebido.
               </div>
