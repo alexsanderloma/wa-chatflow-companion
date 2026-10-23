@@ -155,7 +155,7 @@ export const demoAuditLog: DemoAudit[] = [
 // ===== Webhooks (Fase 4) =====
 export type DemoWebhook = { id: string; url: string; eventos: string[]; ativo: boolean; ultimo: Date };
 export const demoWebhooks: DemoWebhook[] = [
-  { id: "w1", url: "https://crm.clinicavitalis.com.br/webhooks/atendezap", eventos: ["lead.created", "csat.responded"], ativo: true, ultimo: m(30) },
+  { id: "w1", url: "https://crm.clinicavitalis.com.br/webhooks/flowa", eventos: ["lead.created", "csat.responded"], ativo: true, ultimo: m(30) },
   { id: "w2", url: "https://hooks.zapier.com/hooks/catch/123/abc", eventos: ["message.received"], ativo: true, ultimo: m(120) },
 ];
 

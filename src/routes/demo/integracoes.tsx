@@ -56,7 +56,7 @@ function IntegracoesDemo() {
             ))}
           </div>
           <div className="rounded-xl border border-border bg-muted/30 p-3 text-[12px] text-muted-foreground">
-            Os disparos são assinados com <code className="font-mono">X-AtendeZap-Signature: sha256={"{hash}"}</code> usando seu segredo.
+            Os disparos são assinados com <code className="font-mono">X-Flowa-Signature: sha256={"{hash}"}</code> usando seu segredo.
             Verifique antes de processar.
           </div>
         </TabsContent>

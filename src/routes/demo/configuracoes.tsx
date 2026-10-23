@@ -165,7 +165,7 @@ function ConfigDemo() {
               </div>
               <Switch checked disabled />
             </div>
-            <RO label="Webhook URL" value="https://atendezap.live/api/public/whatsapp-webhook" />
+            <RO label="Webhook URL" value="https://flowa.store/api/public/whatsapp-webhook" />
           </Card>
         </TabsContent>
 

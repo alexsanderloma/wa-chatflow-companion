@@ -3,7 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getRequest } from "@tanstack/react-start/server";
 
 function deriveInstanceName(companyId: string) {
-  return `atendezap_${companyId.replace(/-/g, "").slice(0, 16)}`;
+  return `flowa_${companyId.replace(/-/g, "").slice(0, 16)}`;
 }
 
 function buildWebhookUrl(token?: string | null) {

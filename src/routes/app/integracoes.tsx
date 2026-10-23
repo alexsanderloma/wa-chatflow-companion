@@ -96,7 +96,7 @@ function WebhooksTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Envie eventos do atendimento para Zapier, Make, n8n ou seu próprio servidor. Assinatura HMAC-SHA256 no header <code>X-AtendeZap-Signature</code>.</p>
+        <p className="text-sm text-muted-foreground">Envie eventos do atendimento para Zapier, Make, n8n ou seu próprio servidor. Assinatura HMAC-SHA256 no header <code>X-Flowa-Signature</code>.</p>
         <Button onClick={openNew}><Plus className="size-4 mr-1" /> Novo webhook</Button>
       </div>
 

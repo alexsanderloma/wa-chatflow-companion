@@ -166,7 +166,7 @@ function ConversasDemo() {
                     <div className="max-w-[78%] bg-gradient-to-br from-[#6D28D9] to-[#7C3AED] text-primary-foreground rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] font-medium">
                       <span className="block text-[9.5px] font-bold opacity-80 mb-1 uppercase tracking-wider">⭐ Pesquisa CSAT</span>
                       Oi! Como foi seu atendimento de hoje? Avalie de 1 a 5 ⭐
-                      <div className="mt-1.5 opacity-90 text-[11px]">https://atendezap.live/csat/8f3a…</div>
+                      <div className="mt-1.5 opacity-90 text-[11px]">https://flowa.store/csat/8f3a…</div>
                     </div>
                   </div>
                 )}
