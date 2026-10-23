@@ -12,3 +12,7 @@
 - [x] Replace old brand on legal pages and their titles; include the current support contact.
 - [x] Use the shared support contact in WhatsApp error messages without changing integration behavior.
 - [x] Audit remaining names and contacts; legal titles/support links verified in the browser, all three brand/support tests passed; preserve integration contracts and the current domain. No publish.
+
+## Master plans screen: reflect dynamic Asaas checkout
+- [x] Remove the false "no checkout URL" warning; show a positive Asaas indicator with the Pix/card/boleto explanation.
+- [x] Keep the optional URL as a legacy/external-provider field and add a header note about the Asaas checkout. No plan, price, webhook, secret, database or billing logic changes; typecheck and build clean, verified signed-in; no publish.
