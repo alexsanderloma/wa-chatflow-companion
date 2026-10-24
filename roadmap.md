@@ -5,9 +5,15 @@
 - [x] Offline protocol, transport and regression tests passed; automatic build OK. No secrets or publication; live Google/model availability remains unverified without a configured key or real requests.
 
 ## Production connection removal and Master periods
-- [ ] Add authenticated disconnected-line removal with remote best effort, local deletion and usage refresh; distinguish missing instance from transient errors.
-- [ ] Read actual plan instance limits and replace manual trial extension with required 7-day trial, 30-day temporary or permanent Master period; preserve audit/history.
-- [ ] Run focused tests and verify flows; report changed files without publication.
+- [x] Add authenticated disconnected-line removal with remote best effort, local deletion and usage refresh; distinguish missing instance from transient errors.
+- [x] Read actual plan instance limits and replace manual trial extension with required 7-day trial, 30-day temporary or permanent Master period; preserve audit/history.
+- [x] 20 focused tests passed and automatic build OK; database migration and service-role-only permissions verified. Live removal/grant flows not exercised in a real session. No publish.
+
+## Subscription tab, phone pairing and supplier catalog
+- [x] Add the Assinatura section (Planos / Selecionar plano) and keep the plan-change dialog open for existing subscribers.
+- [x] Add WhatsApp pairing by phone number beside the QR Code, with code display and self-confirming status checks.
+- [x] Add manual product entry and CSV import to the supplier catalog, with item removal; automatic capture stays review-only.
+- [x] Project tests passed and automatic build OK; no real pairing, payment or import performed. No publish.
 
 ## Connection tab repair
 - [x] Fix stale status races, pairing lifecycle, loading and visible errors without changing Evolution or data.
