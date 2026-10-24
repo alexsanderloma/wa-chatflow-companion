@@ -27,7 +27,7 @@ Auditoria somente leitura, realizada em 24/10/2026. Nenhum código de aplicaçã
 - `consume_ai_credit` é atômica para impedir saldo negativo, mas não é idempotente: a referência recebida é o telefone, sem unicidade de resposta.
 - Erro dessa RPC pode ser interpretado como saldo esgotado porque seu `error` não é verificado.
 - A persistência de mensagens tem índice único `(company_id, whatsapp_message_id)` e o código interrompe a automação se o registro falhar. Portanto já existe proteção contra duplicação da entrada identificada; falta um registro idempotente próprio da cobrança e do resultado do envio.
-- O extrato recente contém 37 descontos de IA, sem devoluções registradas. Isso não prova que as 37 respostas falharam, nem permite calcular reembolso por comparação simples com as bolhas enviadas.
+
 
 ### Provedor e compatibilidade
 
@@ -42,8 +42,7 @@ Auditoria somente leitura, realizada em 24/10/2026. Nenhum código de aplicaçã
 - Os transportes atuais retornam somente texto, sem persistir tokens ou custos de cada tentativa. Não existe tabela dedicada de uso/custo da IA no banco consultado.
 - O MRR atual do Master soma preços das assinaturas ativas (`master.functions.ts:40–42`), inclusive concessões manuais; isso é receita nominal esperada, não recebimento confirmado.
 - O financeiro das empresas é outro módulo. Não será reaproveitado para expor despesas internas do FLOWA aos clientes.
-- Entre 11/10 e 24/10 às 15:09 UTC, os registros retornados indicam 0,32829 créditos solicitados pelo Gateway e 1,717932048 pelo banco. São quantidades registradas, não custo em reais. No Gateway, os itens registrados são do 3.8 Flash, não uma medida do custo do 2.5 por empresa.
-- Exemplo medido: chamada `01a16d62-df6f-7695-a2c2-44a3ccf9b3d7`, 24/10 às 10:09:22 UTC, 3.8 Flash, 1.461 tokens de entrada/343 de saída, 0,009528 créditos. A amostra não constitui média representativa; conteúdo está redigido e não foi reconstruído.
+- Na janela 11/10–24/10 às 15:09 UTC, registros retornados: 0,32829 créditos solicitados pelo Gateway (3.8 Flash) e 1,717932048 pelo banco; não são valores em reais nem custo do 2.5 por empresa. Amostra `01a16d62-df6f-7695-a2c2-44a3ccf9b3d7`, 24/10 às 10:09:22 UTC: 1.461 tokens de entrada/343 de saída, 0,009528 créditos; não é média representativa. Conteúdo redigido não foi reconstruído.
 
 ## 2. Estimativa condicional da IA
 
@@ -73,37 +72,34 @@ Cada 1.000 respostas nesse cenário custam 2,6 créditos Lovable, não 1.000. Me
 
 ### Etapa B — Medição e perfil econômico
 
-1. Resolver a divergência do transporte: com autorização, Gemini texto/mídia usam Gateway; Google direto e sua chave permanecem inativos para futuro, OpenAI/Anthropic com chave própria ficam preservados. Não migrar modelo sem decisão explícita.
-2. Registrar por chamada e tentativa empresa, plano vigente, resposta lógica, finalidade, provedor/modelo, status, tokens retornados e IDs de correlação. Incluir áudio/imagem e tentativas que falham; uso ausente permanece desconhecido, nunca zero.
-3. Separar tokens medidos, custo calculado com tarifa versionada e custo confirmado pelo Gateway. Não assumir custo real em dinheiro. Conciliação exige fonte de faturamento autorizada; acesso ao diagnóstico deste chat não é uma API disponível automaticamente ao aplicativo.
-4. Compactar instruções redundantes, manter contexto recente e fatos relevantes, selecionar itens úteis do catálogo e conservar regras críticas, preços, políticas, agendamento e escalonamento. Incluir custo de eventual resumo na medição; não gerar resumo a cada mensagem por padrão.
-5. Respostas curtas com meta de 200 tokens, sem teto rígido que corte marcadores ou conteúdo necessário. Meta de 500 de entrada flexível quando o atendimento exige mais contexto. Reduzir raciocínio só por opção compatível validada.
-6. Comparar antes/depois em casos representativos: vendas, objeções, suporte, agendamento, transferência e mídia. Só declarar economia/qualidade preservada com medições comparáveis e avaliação desses casos.
+- Com autorização, resolver o transporte divergente: Gemini texto/mídia via Gateway, Google direto/chave preservados inativos; OpenAI/Anthropic intactos. Validar modelo solicitado e opções antes; não substituir silenciosamente.
+- Registrar por chamada/tentativa empresa, plano vigente, resposta lógica, finalidade, provedor/modelo, status, tokens e correlação; incluir mídia e erros. Uso ausente = desconhecido, nunca zero.
+- Separar tokens medidos, custo calculado por tarifa versionada e custo confirmado do Gateway. Custo em dinheiro exige faturamento autorizado; ferramentas deste chat não são APIs automaticamente disponíveis ao app.
+- Compactar instruções redundantes, contexto e catálogo relevante, preservando fatos, preços, políticas, pausa, agendamento e escalonamento. Medir também eventual resumo; não regenerá-lo a cada mensagem.
+- Metas flexíveis 500/200, não tetos rígidos; raciocínio reduzido somente por parâmetro validado. Comparar casos representativos antes/depois para comprovar economia e qualidade, sem presumir resultados.
 
 ### Etapa C — Gestão Financeira da IA, exclusiva do Master
 
-- Nova seção com filtros por empresa, plano e período; tokens, chamadas, respostas entregues, custo por 1.000 respostas, pendências e alertas de risco.
-- Receita recebida vem de pagamentos confirmados e estornos; MRR nominal separado, sem tratar acesso manual como pagamento. Despesas operacionais registradas pelo Master, com regra explícita de rateio para margens por plano.
-- Simulador com custos, uso esperado da franquia, outras despesas, multiplicador e margem de segurança. R$ 100 × 3 = R$ 300 antes das demais despesas. Preços recomendados são simulação; nenhum botão altera preços públicos nesta entrega.
-- Tarifas, moeda/câmbio e rateios versionados e visíveis no cálculo. Sem base suficiente, resultado/margem ficam estimados ou indisponíveis, nunca apresentados como lucro real.
-- Proteção em página, funções autenticadas e RLS; escrita de telemetria apenas no servidor. Negar clientes e administradores de empresas, inclusive consultas diretas. Não expor prompts, mensagens privadas, chaves ou dados brutos de mídia nos relatórios.
-- Manter visual atual, menu completo no celular e financeiro das empresas inalterado. Clientes continuam vendo apenas plano, saldo e consumo próprio.
+- Seção com filtros empresa/plano/período, tokens, chamadas, respostas entregues, custo por 1.000, pendências e alertas de risco.
+- Receita recebida baseada em pagamentos confirmados/estornos, separada do MRR nominal e acesso manual. Despesas operacionais e rateio explícito registrados pelo Master.
+- Simulador: custos reais disponíveis, uso previsto, despesas, multiplicador e margem de segurança; R$ 100 × 3 = R$ 300 antes das demais despesas. Não incluir ação que altere preços públicos.
+- Tarifas, moedas/câmbio e rateios versionados; margens sem base suficiente ficam estimadas ou indisponíveis, nunca lucro real.
+- Proteger página, funções autenticadas e RLS; telemetria escrita só no servidor. Negar clientes/admins de empresa também em consultas diretas. Não expor chaves, prompts, mensagens ou mídia bruta.
+- Manter visual e menu móvel atuais; financeiro das empresas intacto; cliente vê somente plano, saldo e consumo próprio.
 
-## 4. Arquivos e tabelas previstos
+## 4. Arquivos, segurança e testes
 
-- Créditos/ativação: `src/routes/api/public/whatsapp-webhook.ts`, `src/routes/api/public/billing/webhook.ts`, `src/lib/credits.functions.ts`, `src/lib/plan-limits.server.ts`, `src/lib/plan.functions.ts`; RPCs `topup_plan_credits`/`consume_ai_credit`, tabelas `plan`, `credit_ledger`, novos registros de reserva/recarga.
-- IA: `src/lib/lovable-ai.server.ts`, `gemini.server.ts` (preservar direto), `whatsapp-media.server.ts`, `ai-prompt.ts`, `agent-ai.functions.ts`; módulos focados de transporte Gateway, contexto econômico e telemetria.
-- Master: `src/routes/master.tsx`, nova página financeira e funções/calculadoras separadas; novas tabelas de uso, despesas, tarifas e parâmetros de simulação. Metadados próprios na nova página. Não modificar telas fora do necessário.
-- Toda nova tabela pública terá GRANT, RLS e políticas na mesma migração, aplicada pelo fluxo oficial; operações privilegiadas autorizam Master antes de importar cliente administrativo. Nenhuma edição de arquivos de integração gerados.
+**Arquivos envolvidos:** `whatsapp-webhook.ts`, `billing/webhook.ts`, `credits.functions.ts`, `plan-limits.server.ts`, `plan.functions.ts`, `lovable-ai.server.ts`, `whatsapp-media.server.ts`, `ai-prompt.ts`, `agent-ai.functions.ts`, `master.tsx`; novos módulos focados de transporte Gateway, contexto, telemetria, calculadoras e página Master financeira. Preservar `gemini.server.ts` inativo para futuro.
 
-## 5. Testes e validação
+**Banco:** `plan`, `credit_ledger`, RPCs de recarga/consumo; novos registros duráveis de reserva, recarga por pagamento, uso, despesas, tarifas e parâmetros. GRANT + RLS + políticas na mesma migração oficial; autorização Master antes do cliente administrativo, sem editar integrações geradas.
 
-- Um teste por franquia: Starter 1.000, Pro 6.000, Business 30.000; confirmar preços 97/197/497 preservados.
-- Mesmo pagamento repetido/concurrente recarrega uma vez; novo ciclo recarrega a franquia correta; plano errado/evento atrasado/cancelamento não concede créditos; rollback atômico em erro.
-- Uma resposta entregue = um crédito; partes da mesma resposta = um total; falha, vazio e bloqueio = zero; reserva/reembolso idempotentes; concorrência no último crédito; erro de RPC não aparece como saldo zero; envio incerto não dispara duplicata.
-- Uso de texto/mídia/tentativas, tarifa e cálculo por 1.000, campos desconhecidos, receita recebida versus nominal, filtros e rateios; simulação 100 × 3 = 300 sem alteração pública.
-- Acesso negado a cliente, admin de empresa e visitante em página/funções/tabelas; testes autenticados Master e conta comum sem mensagens a clientes.
-- Testes atuais relevantes e regressões offline com provedores/WhatsApp simulados. Após autorização, teste controlado do Gateway sem cliente; parar em indisponibilidade/negação. Compilação automática e conferência de erros; navegação desktop/celular e leitura de relatórios.
+**Testes:**
+- Franquias concretas: Starter 1.000, Pro 6.000, Business 30.000; preços 97/197/497 preservados.
+- Pagamento repetido/concurrente = uma recarga; novo ciclo = franquia correta; plano errado, evento atrasado, cancelamento e rollback.
+- Resposta entregue = um crédito; partes = um total; falha/vazio/bloqueio = zero; reserva/devolução idempotentes; concorrência no último crédito; erro técnico distinto de saldo zero; envio incerto sem duplicata.
+- Medição de texto/mídia/tentativas, valores desconhecidos, tarifas e custo por 1.000; receita recebida versus nominal, filtros/rateios; simulação 100 × 3 = 300 sem mudar preço.
+- Negar visitante/cliente/admin de empresa em página, funções e tabelas; verificar Master e conta comum autenticados.
+- Regressões offline com provedores/WhatsApp simulados; após aprovação, chamada controlada do Gateway sem cliente e avaliação de vendas, suporte, agendamento, transferência e mídia. Indisponibilidade/negação interrompe a etapa. Compilação automática, relatórios e navegação desktop/celular.
 
 ## 6. Riscos, custos e aprovação
 
