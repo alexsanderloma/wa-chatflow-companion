@@ -159,9 +159,7 @@ async function applyEvent(evt: NormalizedBillingEvent) {
   if (evt.periodEnd) subPayload.current_period_end = evt.periodEnd;
   if (subStatus === "canceled") subPayload.canceled_at = new Date().toISOString();
 
-  // 1) Mesma assinatura do provedor → atualiza; 2) senão a assinatura corrente
-  // da empresa; 3) senão cria nova. Canceladas ficam como histórico.
-  const CURRENT = ["trialing", "active", "past_due", "incomplete", "paused"];
+  // Non-paid events only target the exact external subscription; never a fallback.
   let targetId: string | null = null;
   if (evt.externalSubscriptionId) {
     const { data: byExt, error: extErr } = await supabase
@@ -178,23 +176,8 @@ async function applyEvent(evt: NormalizedBillingEvent) {
     await supabase.from('billing_event_log').insert({ ...logRow, matched_company_id: companyId, error: 'Assinatura externa não localizada; conciliação necessária', processed: false });
     return;
   }
-  if (!targetId) {
-    const { data: cur, error: curErr } = await supabase
-      .from("subscription")
-      .select("id")
-      .eq("company_id", companyId)
-      .in("status", CURRENT)
-      .maybeSingle();
-    if (curErr) throw new Error(`subscription lookup (corrente): ${curErr.message}`);
-    targetId = cur?.id ?? null;
-  }
-  if (targetId) {
-    const { error: updErr } = await supabase.from("subscription").update(subPayload).eq("id", targetId);
-    if (updErr) throw new Error(`subscription update: ${updErr.message}`);
-  } else {
-    const { error: insErr } = await supabase.from("subscription").insert(subPayload);
-    if (insErr) throw new Error(`subscription insert: ${insErr.message}`);
-  }
+  const { error: updErr } = await supabase.from("subscription").update(subPayload).eq("id", targetId);
+  if (updErr) throw new Error(`subscription update: ${updErr.message}`);
 
   if (companyStatus) {
     const { error: compErr } = await supabase
