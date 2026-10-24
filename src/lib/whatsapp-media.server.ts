@@ -1,6 +1,7 @@
-// Server-only: baixa a mídia pela Evolution API e analisa com o gateway Gemini.
+// Server-only: baixa a mídia pela Evolution API e analisa com Gemini direto.
 // Base64 só existe em memória durante a requisição; nunca é logado nem salvo.
 import { evoGetMediaBase64 } from "./evolution.server";
+import { generateGeminiContent } from "./gemini.server";
 import {
   base64ByteLength,
   buildMediaAnalysisMessages,
@@ -8,8 +9,7 @@ import {
   type DetectedMedia,
 } from "./whatsapp-media";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MEDIA_MODEL = "google/gemini-3.8-flash";
+const MEDIA_MODEL = "gemini-3.8-flash";
 const DOWNLOAD_TIMEOUT_MS = 15_000;
 const ANALYSIS_TIMEOUT_MS = 30_000;
 
@@ -35,25 +35,15 @@ export async function analyzeWhatsappMedia(
       console.warn("[media] download acima do limite", media.kind);
       return null;
     }
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) return null;
-    const res = await fetch(GATEWAY, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: MEDIA_MODEL, messages: buildMediaAnalysisMessages(media, base64) }),
-      signal: AbortSignal.timeout(ANALYSIS_TIMEOUT_MS),
-    });
+    const out = await generateGeminiContent(
+      { contents: buildMediaAnalysisMessages(media, base64) }, MEDIA_MODEL,
+      AbortSignal.timeout(ANALYSIS_TIMEOUT_MS),
+    );
     base64 = null;
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      console.error("[media.ai]", res.status, t.slice(0, 200));
-      return null;
-    }
-    const json: any = await res.json();
-    const out = json?.choices?.[0]?.message?.content?.toString().trim() || "";
     return out ? out.slice(0, 2000) : null;
-  } catch (e: any) {
-    console.error("[media]", media.kind, e?.name || "", String(e?.message || "").slice(0, 200));
+  } catch {
+    // Neither download nor provider exceptions are trusted to exclude credentials/media.
+    console.error("[media]", media.kind, "Falha ao baixar ou analisar mídia.");
     return null;
   }
 }

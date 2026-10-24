@@ -1,5 +1,7 @@
-// Multi-provider AI chat. Gemini default via Lovable Gateway (free for users).
+// Multi-provider AI chat. Gemini uses Google's official API with a server key.
 // OpenAI e Anthropic usam a chave da própria empresa.
+import { buildGeminiRequest } from "./gemini";
+import { generateGeminiContent } from "./gemini.server";
 
 export interface ChatMsg {
   role: "system" | "user" | "assistant";
@@ -13,11 +15,9 @@ export interface AiProviderConfig {
   anthropicKey?: string;
 }
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
 export async function lovableAiChat(
   messages: ChatMsg[],
-  modelOrConfig: string | AiProviderConfig = "google/gemini-2.5-flash",
+  modelOrConfig: string | AiProviderConfig = "gemini-3.8-flash",
 ): Promise<string> {
   const cfg: AiProviderConfig =
     typeof modelOrConfig === "string"
@@ -37,23 +37,7 @@ export async function lovableAiChat(
     const model = cfg.model || "claude-3-5-sonnet-latest";
     return anthropicChat(key, model, messages);
   }
-  // default: Gemini via Lovable Gateway
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY ausente.");
-  const model = cfg.model || "google/gemini-2.5-flash";
-  const res = await fetch(GATEWAY, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages }),
-  });
-  if (!res.ok) {
-    const t = await res.text();
-    if (res.status === 429) throw new Error("Limite de uso da IA atingido. Tente em alguns minutos.");
-    if (res.status === 402) throw new Error("Créditos de IA esgotados no workspace.");
-    throw new Error(`Lovable AI: ${res.status} ${t}`);
-  }
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content?.toString().trim() || "";
+  return generateGeminiContent(buildGeminiRequest(messages), cfg.model);
 }
 
 async function openAiChat(key: string, model: string, messages: ChatMsg[]): Promise<string> {

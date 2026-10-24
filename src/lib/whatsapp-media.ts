@@ -1,5 +1,6 @@
 // Detecção de mídia (imagem/áudio) em mensagens da Evolution API e montagem
 // do conteúdo multimodal enviado à IA. Módulo puro (sem rede) para testes.
+import type { GeminiContent } from "./gemini";
 
 export type MediaKind = "image" | "audio";
 export type AudioFormat = "wav" | "mp3" | "webm" | "m4a" | "ogg" | "aac" | "flac";
@@ -44,7 +45,7 @@ function toNumber(v: any): number | null {
 
 function cleanBase64(v: any): string | null {
   if (typeof v !== "string" || !v.trim()) return null;
-  const s = v.includes("base64,") ? v.split("base64,").pop()! : v;
+  const s = v.includes("base64,") ? v.split("base64,").pop() || "" : v;
   return s.replace(/\s/g, "") || null;
 }
 
@@ -113,20 +114,21 @@ const IMAGE_PROMPT =
 const AUDIO_PROMPT =
   "Transcreva fielmente, em português, o áudio enviado por um cliente no WhatsApp. Responda apenas com a transcrição, sem comentários. Se o áudio estiver inaudível ou sem fala, responda exatamente: [inaudível]";
 
-/** Mensagens para o gateway (chat completions) com a mídia real. */
-export function buildMediaAnalysisMessages(media: DetectedMedia, base64: string) {
+/** Native Google generateContent contents with the real media and MIME type. */
+export function buildMediaAnalysisMessages(media: DetectedMedia, base64: string): GeminiContent[] {
   if (!base64.trim()) throw new Error("Mídia vazia");
   if (media.kind === "image") {
-    const content: any[] = [{ type: "text", text: IMAGE_PROMPT + (media.caption ? `\nLegenda do cliente: ${media.caption}` : "") }];
-    content.push({ type: "image_url", image_url: { url: `data:${media.mimetype || "image/jpeg"};base64,${base64}` } });
-    return [{ role: "user", content }];
+    return [{ role: "user", parts: [
+      { text: IMAGE_PROMPT + (media.caption ? `\nLegenda do cliente: ${media.caption}` : "") },
+      { inlineData: { data: base64, mimeType: media.mimetype || "image/jpeg" } },
+    ] }];
   }
   return [
     {
       role: "user",
-      content: [
-        { type: "text", text: AUDIO_PROMPT },
-        { type: "input_audio", input_audio: { data: base64, format: audioFormatFromMime(media.mimetype) } },
+      parts: [
+        { text: AUDIO_PROMPT },
+        { inlineData: { data: base64, mimeType: media.mimetype || "audio/ogg" } },
       ],
     },
   ];
