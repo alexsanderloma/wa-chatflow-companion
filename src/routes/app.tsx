@@ -69,6 +69,7 @@ export const Route = createFileRoute("/app")({
       company.status_cobranca === "checkout_pending" ||
       company.status_cobranca === "suspenso" ||
       company.status_cobranca === "pendente" ||
+      (company.master_access_until != null && new Date(company.master_access_until).getTime() <= Date.now()) ||
       trialExpired;
 
     if (needsPayment && location.pathname !== "/app/checkout") {

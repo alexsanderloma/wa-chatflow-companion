@@ -8,6 +8,7 @@ export type CompanyRow = {
   telefone: string | null;
   status_cobranca: "trial" | "ativo" | "suspenso" | "pendente" | "checkout_pending";
   trial_ate: string;
+  master_access_until?: string | null;
   onboarding_completed?: boolean | null;
   onboarding_step?: number | null;
   tipo_pessoa?: "pf" | "pj" | null;

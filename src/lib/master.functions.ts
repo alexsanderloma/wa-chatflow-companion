@@ -126,26 +126,6 @@ export const suspendCompany = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const extendTrial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { companyId: string; days: number }) => ({
-    companyId: d.companyId,
-    days: Math.max(1, Math.min(365, Math.floor(d.days))),
-  }))
-  .handler(async ({ context, data }) => {
-    await assertSuper(context.supabase, context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: c } = await supabaseAdmin.from("company").select("trial_ate").eq("id", data.companyId).maybeSingle();
-    const base = c?.trial_ate ? new Date(c.trial_ate as string) : new Date();
-    const next = new Date(Math.max(base.getTime(), Date.now()) + data.days * 86400000);
-    const { error } = await supabaseAdmin
-      .from("company")
-      .update({ trial_ate: next.toISOString(), status_cobranca: "trial" })
-      .eq("id", data.companyId);
-    if (error) throw error;
-    return { trial_ate: next.toISOString() };
-  });
-
 export const createCompanyWithOwner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: {
@@ -409,7 +389,7 @@ export const manageCompanyPlan = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Database locks + audit in one transaction; no external billing request.
     const { data: result, error } = await supabaseAdmin.rpc("master_manage_company_plan", {
-      _actor_id: context.userId, _company_id: data.companyId, _plan_id: data.planId ?? "00000000-0000-0000-0000-000000000000", _action: data.action,
+      _actor_id: context.userId, _company_id: data.companyId, _plan_id: data.planId ?? "00000000-0000-0000-0000-000000000000", _action: data.action, _period: data.period ?? "",
     });
     if (error) throw new Error("Não foi possível alterar o plano. Confira a empresa e selecione um plano ativo.");
     if (!result || typeof result !== "object" || Array.isArray(result) || result.ok !== true) throw new Error("A alteração do plano não foi confirmada");

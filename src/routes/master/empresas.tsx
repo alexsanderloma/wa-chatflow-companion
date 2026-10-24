@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogIn, Pause, Play, CalendarClock, Loader2, KeyRound, Eye, Sparkles } from "lucide-react";
+import { LogIn, Pause, Play, Loader2, KeyRound, Eye, Sparkles } from "lucide-react";
 import { brand } from "@/config/brand";
-import { listCompanies, suspendCompany, extendTrial, resetCompanyOwnerPassword, getCompanyDetails } from "@/lib/master.functions";
+import { listCompanies, suspendCompany, resetCompanyOwnerPassword, getCompanyDetails } from "@/lib/master.functions";
 import { adminGrantCredits } from "@/lib/credits.functions";
 import { MasterCompanyPlanDialog, subscriptionStatusLabel } from "@/components/master-company-plan-dialog";
 
@@ -26,7 +26,6 @@ function EmpresasPage() {
   const navigate = useNavigate();
   const list = useServerFn(listCompanies);
   const suspend = useServerFn(suspendCompany);
-  const extend = useServerFn(extendTrial);
   const resetPwd = useServerFn(resetCompanyOwnerPassword);
   const details = useServerFn(getCompanyDetails);
   const grantCredits = useServerFn(adminGrantCredits);
@@ -63,14 +62,6 @@ function EmpresasPage() {
     const next = c.status_cobranca !== "suspenso";
     await suspend({ data: { companyId: c.id, suspend: next } });
     toast.success(next ? "Empresa suspensa" : "Empresa reativada");
-    reload();
-  }
-
-  async function doExtend(c: any) {
-    const days = Number(prompt("Estender trial por quantos dias?", "14"));
-    if (!days || isNaN(days)) return;
-    await extend({ data: { companyId: c.id, days } });
-    toast.success(`Trial estendido +${days}d`);
     reload();
   }
 
@@ -167,7 +158,7 @@ function EmpresasPage() {
                   <StatusBadge s={c.status_cobranca} />
                 </div>
                 <div className="col-span-2 text-xs text-muted-foreground">
-                  {c.trial_ate ? new Date(c.trial_ate).toLocaleDateString("pt-BR") : "—"}
+                  {c.status_cobranca === "trial" && c.trial_ate ? new Date(c.trial_ate).toLocaleDateString("pt-BR") : "—"}
                 </div>
                 <div className="col-span-2 text-xs text-muted-foreground">
                   {new Date(c.created_at).toLocaleDateString("pt-BR")}
@@ -185,9 +176,6 @@ function EmpresasPage() {
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => doGrantCredits(c)} title="Créditos de IA">
                     <Sparkles className="size-3.5" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => doExtend(c)} title="Estender trial">
-                    <CalendarClock className="size-3.5" />
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => toggleSuspend(c)}
                     title={c.status_cobranca === "suspenso" ? "Reativar" : "Suspender"}>
