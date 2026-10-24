@@ -61,7 +61,13 @@ test("media size limits remain 5 MiB images and 10 MiB audio", () => {
 });
 
 // All transport tests replace fetch: no Google, Gateway or billing calls can occur.
-test("public chat interface and transport use only the direct Gemini server key", async () => {
+test("Gateway module preserves requested model normalization", async () => {
+  const {gatewayModel}=await import('./ai-gateway.server.ts');
+  assert.equal(gatewayModel(), 'google/gemini-2.5-flash');
+  assert.equal(gatewayModel('gemini-2.5-flash'), 'google/gemini-2.5-flash');
+  assert.equal(gatewayModel('google/gemini-custom'), 'google/gemini-custom');
+});
+test("inactive direct Gemini transport remains available without changing its protocol", async () => {
   const originalFetch = globalThis.fetch;
   const originalKey = process.env.GEMINI_API_KEY;
   const calls = [];
@@ -72,9 +78,7 @@ test("public chat interface and transport use only the direct Gemini server key"
   };
   try {
     const messages = [{ role: "system", content: "regras" }, { role: "user", content: "oi" }];
-    for (const config of [undefined, "google/gemini-2.5-flash", { provider: "gemini", model: "google/gemini-2.5-flash" }, { provider: "default" }]) {
-      assert.equal(await lovableAiChat(messages, config), "resposta");
-    }
+    assert.equal(await generateGeminiContent(buildGeminiRequest(messages), 'google/gemini-2.5-flash'), 'resposta');
     for (const call of calls) {
       assert.equal(call.url, "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent");
       assert.equal(call.init.method, "POST");

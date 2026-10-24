@@ -79,7 +79,7 @@ test("webhook calls the analyzer only after all no-reply exits", () => {
   const analyze = src.indexOf("analyzeWhatsappMedia(");
   assert.ok(analyze > 0);
   assert.equal(src.indexOf("analyzeWhatsappMedia("), src.lastIndexOf("analyzeWhatsappMedia("));
-  for (const exit of ['"opt-out"', '"paused-contact"', '"off-hours"', '"superseded"', '"human-active"', '"no_credits"', "return new Response(throttleReason"]) {
+  for (const exit of ['"opt-out"', '"paused-contact"', '"off-hours"', '"superseded"', '"human-active"', "return new Response(reservation.status", "return new Response(throttleReason"]) {
     const i = src.indexOf(exit);
     assert.ok(i > 0 && i < analyze, exit);
   }

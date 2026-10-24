@@ -68,7 +68,7 @@ export async function evoCreateInstance(instanceName: string, webhookUrl?: strin
       url: webhookUrl,
       byEvents: false,
       base64: false,
-      events: ["MESSAGES_UPSERT"],
+      events: ["MESSAGES_UPSERT", "MESSAGES_UPDATE"],
     };
   }
   return evo(`/instance/create`, { method: "POST", json: body, signal: AbortSignal.timeout(20_000) });
@@ -112,7 +112,7 @@ export async function evoSetWebhook(instanceName: string, webhookUrl: string) {
         url: webhookUrl,
         byEvents: false,
         base64: false,
-        events: ["MESSAGES_UPSERT"],
+        events: ["MESSAGES_UPSERT", "MESSAGES_UPDATE"],
       },
     },
   }));

@@ -347,9 +347,13 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           if (!reservation.claimed || !reservation.id) return new Response(reservation.status, { status: 200 });
           const chargeId = reservation.id;
           let sendStarted = false;
+          let pendingSend = false;
           try {
           const plan = await getCompanyPlan(companyId);
           const usage = { companyId, chargeId, planSlug: plan.slug };
+          // No connect calls: only subscribe this authenticated instance to delivery acknowledgements.
+          const { evoSetWebhook } = await import('@/lib/evolution.server');
+          await evoSetWebhook(instanceName, request.url);
 
           // Mídia: só é baixada/analisada aqui, depois de todas as saídas que impedem resposta.
           if (media && shouldAnalyzeMedia({ hasMedia: true, optOut: false, paused: false, offHours: false, superseded: false, humanActive: false, noCredit: false, throttled: false })) {
@@ -440,6 +444,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
               await new Promise((r) => setTimeout(r, typingMs));
               sendStarted = true;
               const receipt = await sendAccountedPart(supabaseAdmin, chargeId, companyId, i, () => evoSendText(instanceName, number, part));
+              pendingSend ||= receipt.accepted || receipt.delivered || receipt.uncertain;
               if (!receipt.accepted && !receipt.delivered) break;
               await supabaseAdmin.from("mensagens").insert({
                 company_id: companyId,
@@ -457,7 +462,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
               console.error("[send]", e?.message);
             }
           }
-          await finishResponse(supabaseAdmin, chargeId, 'pending');
+          await finishResponse(supabaseAdmin, chargeId, pendingSend ? 'pending' : 'released');
 
           await upsertCard(
             supabaseAdmin,
