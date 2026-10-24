@@ -2,7 +2,7 @@
 
 ## Limites desta etapa
 
-Auditoria somente leitura, realizada em 24/10/2026. Nenhum código de aplicação, banco, saldo, assinatura ou preço foi alterado. Nenhuma resposta foi enviada a clientes, nenhuma geração real de IA foi solicitada e nada foi publicado. Aprovar este plano autoriza implementação, não publicação nem ajuste retroativo de saldos.
+Auditoria somente leitura em 24/10/2026; código, banco, saldos, assinaturas e preços intactos. Sem geração real, mensagem a cliente ou publicação. Aprovação não autoriza publicação nem correção retroativa.
 
 ## 1. Auditoria comprovada
 
@@ -38,21 +38,21 @@ Auditoria somente leitura, realizada em 24/10/2026. Nenhum código de aplicaçã
 
 - Atendimento envia 25 mensagens (`whatsapp-webhook.ts:282–289`), catálogo e instruções extensas (`ai-prompt.ts`): candidato de redução, não economia comprovada.
 - Transportes retornam texto, sem persistir tokens/custos; não existe tabela dedicada de uso. MRR Master soma preços de assinaturas ativas, inclusive manuais (`master.functions.ts:40–42`): receita nominal, não recebimento.
-- Registros 11/10–24/10 às 15:09 UTC: 0,32829 créditos solicitados pelo Gateway (3.8) e 1,717932048 pelo banco. Amostra `01a16d62-df6f-7695-a2c2-44a3ccf9b3d7`, 24/10 10:09:22 UTC: 1.461 entrada/343 saída, 0,009528 créditos; não é média do 2.5 por empresa. Conteúdo redigido não reconstruído.
+- Amostra Gateway `01a16d62-df6f-7695-a2c2-44a3ccf9b3d7`, 24/10 10:09:22 UTC, modelo 3.8: 1.461 entrada/343 saída, 0,009528 créditos; não é média do 2.5 por empresa. Conteúdo redigido não reconstruído.
 
-## 2. Estimativa condicional da IA
+## 2. Estimativa condicional
 
-Tarifas do catálogo autenticado para o 2.5 Flash: entrada textual 0,0000012 crédito/token; saída 0,00001; entrada de áudio 0,000004. Imagens são tarifadas como entrada textual. Sem conversão comprovada de créditos para dinheiro, não apresentar custo real em reais.
+Tarifas do catálogo 2.5: entrada textual 0,0000012 crédito/token, saída 0,00001, áudio 0,000004; imagem como texto. Sem conversão comprovada, não apresentar reais como custo real.
 
-Hipótese: cada unidade da franquia corresponde a uma resposta com 500 tokens de entrada e 200 de saída tarifada, sem cache, áudio, imagens ou tentativas extras.
+Hipótese: uma resposta por crédito FLOWA, 500 tokens entrada/200 saída tarifada, sem cache, mídia ou tentativas extras.
 
-| Plano | Respostas hipotéticas | Entrada / saída totais | Créditos solicitados estimados |
+| Plano | Respostas | Entrada / saída totais | Créditos Lovable estimados |
 |---|---:|---:|---:|
 | Starter | 1.000 | 500.000 / 200.000 | 2,6 |
 | Pro | 6.000 | 3.000.000 / 1.200.000 | 15,6 |
 | Business | 30.000 | 15.000.000 / 6.000.000 | 78 |
 
-Cada 1.000 respostas nesse cenário custam 2,6 créditos Lovable, não 1.000. Metas 500/200 não são teto nem previsão garantida. Raciocínio tarifado, contexto maior, mídia e novas tentativas mudam os valores. Créditos FLOWA e créditos Lovable são unidades distintas. Hospedagem, despesas, taxas de pagamento e implantação ficam fora desta conta. Economia realizada e lucro em reais permanecem desconhecidos.
+1.000 respostas neste cenário = 2,6 créditos Lovable. Metas não são tetos. Contexto, raciocínio tarifado, mídia e tentativas mudam a conta; Cloud, despesas e implantação não incluídos. Créditos FLOWA e Lovable são diferentes; lucro e economia reais desconhecidos.
 
 ## 3. Etapas de implementação após aprovação
 
