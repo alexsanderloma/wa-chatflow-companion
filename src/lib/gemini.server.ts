@@ -15,7 +15,9 @@ async function callGemini(request: GeminiRequest, model: string, signal?: AbortS
     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
       headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
-      body: JSON.stringify(request),
+      body: JSON.stringify(model === "gemini-3.8-flash"
+        ? { ...request, generationConfig: { thinkingConfig: { thinkingLevel: "low" } } }
+        : request),
       signal,
     });
   } catch {

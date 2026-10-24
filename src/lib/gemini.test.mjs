@@ -80,7 +80,7 @@ test("public chat interface and transport use only the direct Gemini server key"
       assert.equal(call.init.method, "POST");
       assert.equal(call.init.headers["x-goog-api-key"], "offline-test-key");
       assert.equal(call.init.headers.Authorization, undefined);
-      assert.deepEqual(call.body, buildGeminiRequest(messages));
+      assert.deepEqual(call.body, { ...buildGeminiRequest(messages), generationConfig: { thinkingConfig: { thinkingLevel: "low" } } });
       assert.equal(call.url.includes("offline-test-key"), false);
       assert.equal(JSON.stringify(call.body).includes("offline-test-key"), false);
     }

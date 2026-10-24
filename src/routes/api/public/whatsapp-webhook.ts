@@ -239,6 +239,10 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             console.error("[business-hours]", e?.message);
           }
 
+          // Only authenticated, persisted and unpaused customer work reaches this stream.
+          // Await the entire automation; heartbeat bytes prevent a buffered HTTP timeout.
+          const { streamWebhookWork } = await import("@/lib/webhook-stream.server");
+          return streamWebhookWork(async () => {
           const bufferSec = Math.max(0, Math.min(20, Number(cfg?.segundos_buffer ?? 8)));
           if (bufferSec > 0) {
             await new Promise((r) => setTimeout(r, bufferSec * 1000));
@@ -368,6 +372,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             });
           } catch (e: any) {
             console.error("[ai]", e?.message);
+            return new Response("ai-error", { status: 502 });
           }
 
           const { parts, stage, agendar, escalar } = parseAiOutput(rawReply, stages.map((s) => ({ nome: s.nome, tipo: s.tipo })));
@@ -440,6 +445,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           );
 
           return new Response("ok", { status: 200 });
+          });
         } catch (e: any) {
           console.error("[webhook]", e?.message, e?.stack);
           return new Response("error", { status: 200 });
