@@ -54,6 +54,7 @@ import { Route as MasterApresentacaoRouteImport } from './routes/master/apresent
 import { Route as MasterAssinaturasRouteImport } from './routes/master/assinaturas'
 import { Route as MasterConfiguracoesRouteImport } from './routes/master/configuracoes'
 import { Route as MasterEmpresasRouteImport } from './routes/master/empresas'
+import { Route as MasterFinanceiroIaRouteImport } from './routes/master/financeiro-ia'
 import { Route as MasterNovaEmpresaRouteImport } from './routes/master/nova-empresa'
 import { Route as MasterPainelRouteImport } from './routes/master/painel'
 import { Route as MasterPlanosRouteImport } from './routes/master/planos'
@@ -292,6 +293,11 @@ const MasterEmpresasRoute = MasterEmpresasRouteImport.update({
   path: '/empresas',
   getParentRoute: () => MasterRoute,
 } as any)
+const MasterFinanceiroIaRoute = MasterFinanceiroIaRouteImport.update({
+  id: '/financeiro-ia',
+  path: '/financeiro-ia',
+  getParentRoute: () => MasterRoute,
+} as any)
 const MasterNovaEmpresaRoute = MasterNovaEmpresaRouteImport.update({
   id: '/nova-empresa',
   path: '/nova-empresa',
@@ -399,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/configuracoes': typeof MasterConfiguracoesRoute
   '/master/empresas': typeof MasterEmpresasRoute
+  '/master/financeiro-ia': typeof MasterFinanceiroIaRoute
   '/master/nova-empresa': typeof MasterNovaEmpresaRoute
   '/master/painel': typeof MasterPainelRoute
   '/master/planos': typeof MasterPlanosRoute
@@ -456,6 +463,7 @@ export interface FileRoutesByTo {
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/configuracoes': typeof MasterConfiguracoesRoute
   '/master/empresas': typeof MasterEmpresasRoute
+  '/master/financeiro-ia': typeof MasterFinanceiroIaRoute
   '/master/nova-empresa': typeof MasterNovaEmpresaRoute
   '/master/painel': typeof MasterPainelRoute
   '/master/planos': typeof MasterPlanosRoute
@@ -516,6 +524,7 @@ export interface FileRoutesById {
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/configuracoes': typeof MasterConfiguracoesRoute
   '/master/empresas': typeof MasterEmpresasRoute
+  '/master/financeiro-ia': typeof MasterFinanceiroIaRoute
   '/master/nova-empresa': typeof MasterNovaEmpresaRoute
   '/master/painel': typeof MasterPainelRoute
   '/master/planos': typeof MasterPlanosRoute
@@ -577,6 +586,7 @@ export interface FileRouteTypes {
     | '/master/assinaturas'
     | '/master/configuracoes'
     | '/master/empresas'
+    | '/master/financeiro-ia'
     | '/master/nova-empresa'
     | '/master/painel'
     | '/master/planos'
@@ -634,6 +644,7 @@ export interface FileRouteTypes {
     | '/master/assinaturas'
     | '/master/configuracoes'
     | '/master/empresas'
+    | '/master/financeiro-ia'
     | '/master/nova-empresa'
     | '/master/painel'
     | '/master/planos'
@@ -693,6 +704,7 @@ export interface FileRouteTypes {
     | '/master/assinaturas'
     | '/master/configuracoes'
     | '/master/empresas'
+    | '/master/financeiro-ia'
     | '/master/nova-empresa'
     | '/master/painel'
     | '/master/planos'
@@ -1049,6 +1061,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterEmpresasRouteImport
       parentRoute: typeof MasterRoute
     }
+    '/master/financeiro-ia': {
+      id: '/master/financeiro-ia'
+      path: '/financeiro-ia'
+      fullPath: '/master/financeiro-ia'
+      preLoaderRoute: typeof MasterFinanceiroIaRouteImport
+      parentRoute: typeof MasterRoute
+    }
     '/master/nova-empresa': {
       id: '/master/nova-empresa'
       path: '/nova-empresa'
@@ -1225,6 +1244,7 @@ interface MasterRouteChildren {
   MasterAssinaturasRoute: typeof MasterAssinaturasRoute
   MasterConfiguracoesRoute: typeof MasterConfiguracoesRoute
   MasterEmpresasRoute: typeof MasterEmpresasRoute
+  MasterFinanceiroIaRoute: typeof MasterFinanceiroIaRoute
   MasterNovaEmpresaRoute: typeof MasterNovaEmpresaRoute
   MasterPainelRoute: typeof MasterPainelRoute
   MasterPlanosRoute: typeof MasterPlanosRoute
@@ -1236,6 +1256,7 @@ const MasterRouteChildren: MasterRouteChildren = {
   MasterAssinaturasRoute: MasterAssinaturasRoute,
   MasterConfiguracoesRoute: MasterConfiguracoesRoute,
   MasterEmpresasRoute: MasterEmpresasRoute,
+  MasterFinanceiroIaRoute: MasterFinanceiroIaRoute,
   MasterNovaEmpresaRoute: MasterNovaEmpresaRoute,
   MasterPainelRoute: MasterPainelRoute,
   MasterPlanosRoute: MasterPlanosRoute,
