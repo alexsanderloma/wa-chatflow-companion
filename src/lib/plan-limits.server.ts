@@ -60,7 +60,7 @@ export async function getCompanyPlan(companyId: string): Promise<CompanyPlan> {
       instancias: instanceLimit(row?.limite_instancias),
       usuarios: Number(row?.limite_usuarios ?? 1),
       contatos: Number(row?.limite_contatos ?? 1000),
-      mensagens: Number(row?.limite_mensagens ?? 1500),
+      mensagens: Number(row?.limite_mensagens ?? 1000),
     },
   };
 }

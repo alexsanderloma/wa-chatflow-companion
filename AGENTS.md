@@ -2,7 +2,10 @@
 
 - Workspace mobile navigation keeps four quick links plus a complete sheet menu derived from the desktop sections, preserving the same role filters so destinations cannot disappear on phones.
 
-- Gemini chat and WhatsApp media share the server-only Google generateContent transport; credentials are read at request time and errors never expose provider bodies, while OpenAI/Anthropic retain their tenant-key transports.
+- Gemini chat and WhatsApp media share a streaming, server-only Lovable Gateway transport with durable access pauses and per-call usage; the direct Google module remains inactive, while OpenAI/Anthropic retain their tenant-key transports.
+- AI replies reserve a credit after safety checks and consolidate a single debit only on a confirmed delivered part; uncertain sends remain reserved for reconciliation, preventing automatic replay or false refunds.
+- Paid credit resets use an atomic service-role RPC keyed by payment and subscription cycle; legacy topups are deprecated, preserving history and preventing repeated payment notifications from resetting used credits.
+- Platform AI finance is Master-only at route, authenticated-function and RLS boundaries; measured tokens, tariff estimates, payment receipts and simulated recommendations stay distinct from cash costs and public pricing.
 - Authenticated, persisted WhatsApp customer automation is awaited inside a heartbeat response stream so slow provider calls do not leave a buffered webhook connection idle; pre-authentication and intentional no-reply exits retain their normal responses.
 
 - Checkout upgrade is explicit and support-only until provider updates and entitlement reconciliation are implemented together; ordinary payment reuses only matching-plan Asaas subscriptions, and durable subscription reservation blocks concurrent/uncertain duplicate creation.

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { normalize, type NormalizedBillingEvent, type BillingProvider } from "@/lib/billing/normalize";
 import { extractWebhookToken, isAlreadyProcessed, isValidWebhookToken } from "@/lib/billing/auth";
+import { paymentKey } from '@/lib/ai-accounting';
 
 type Provider = BillingProvider;
 const PROVIDERS: Provider[] = ["kiwify", "cakto", "perfectpay", "asaas"];
@@ -136,6 +137,15 @@ async function applyEvent(evt: NormalizedBillingEvent) {
       return;
   }
 
+  if (subStatus === 'active') {
+    if (!planId) throw new Error('Plano não identificado; requer conciliação.');
+    const { error } = await supabase.rpc('apply_paid_credit_event', { _event: {
+      ...evt, companyId, planId, paymentKey: paymentKey(evt),
+    } });
+    if (error) throw new Error('Pagamento não aplicado; requer conciliação.');
+    return;
+  }
+
   const subPayload: any = {
     company_id: companyId,
     provider: evt.provider,
@@ -156,12 +166,17 @@ async function applyEvent(evt: NormalizedBillingEvent) {
   if (evt.externalSubscriptionId) {
     const { data: byExt, error: extErr } = await supabase
       .from("subscription")
-      .select("id")
+      .select("id,company_id,plan_id,status")
       .eq("provider", evt.provider)
       .eq("external_subscription_id", evt.externalSubscriptionId)
       .maybeSingle();
     if (extErr) throw new Error(`subscription lookup (externo): ${extErr.message}`);
+    if (byExt && (byExt.company_id !== companyId || (planId && byExt.plan_id !== planId))) throw new Error('Associação de assinatura conflitante.');
     targetId = byExt?.id ?? null;
+  }
+  if (!targetId) {
+    await supabase.from('billing_event_log').insert({ ...logRow, matched_company_id: companyId, error: 'Assinatura externa não localizada; conciliação necessária', processed: false });
+    return;
   }
   if (!targetId) {
     const { data: cur, error: curErr } = await supabase
@@ -187,16 +202,6 @@ async function applyEvent(evt: NormalizedBillingEvent) {
       .update({ status_cobranca: companyStatus })
       .eq("id", companyId);
     if (compErr) throw new Error(`company status: ${compErr.message}`);
-  }
-
-  // Recarrega créditos do plano quando assinatura ativa/renova
-  if (subStatus === "active" && planId) {
-    const { data: planRow, error: planErr } = await supabase.from("plan").select("slug").eq("id", planId).maybeSingle();
-    if (planErr) throw new Error(`plan lookup: ${planErr.message}`);
-    if (planRow?.slug) {
-      const { error: topErr } = await supabase.rpc("topup_plan_credits", { _company_id: companyId, _plan_slug: planRow.slug });
-      if (topErr) throw new Error(`credit topup: ${topErr.message}`);
-    }
   }
 
   const { error: logErr } = await supabase.from("billing_event_log").insert({

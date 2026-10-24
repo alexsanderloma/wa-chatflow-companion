@@ -77,6 +77,7 @@ export function normalizeKiwify(body: any): NormalizedBillingEvent {
   const eventName = pick<string>(body, "webhook_event_type", "event") ?? "";
   return {
     provider: "kiwify",
+    externalPaymentId: pick<string>(body, "order_id", "order.id", "id"),
     eventType: mapKiwifyEvent(eventName),
     rawEventName: eventName,
     buyerEmail: lower(pick(body, "Customer.email", "customer.email", "buyer.email")),
@@ -113,6 +114,7 @@ export function normalizeCakto(body: any): NormalizedBillingEvent {
   const data = body?.data ?? body;
   return {
     provider: "cakto",
+    externalPaymentId: pick<string>(data, "transaction_id", "transaction.id", "id"),
     eventType: mapCaktoEvent(eventName),
     rawEventName: eventName,
     buyerEmail: lower(pick(data, "customer.email", "buyer.email", "customer_email")),
@@ -146,6 +148,7 @@ export function normalizePerfectpay(body: any): NormalizedBillingEvent {
   const status = pick<string>(body, "sale_status_enum_key", "status", "transaction_status") ?? "";
   return {
     provider: "perfectpay",
+    externalPaymentId: pick<string>(body, "sale_id", "transaction_code", "code"),
     eventType: mapPerfectpayEvent(status),
     rawEventName: status,
     buyerEmail: lower(pick(body, "customer.email", "client.email", "email")),
