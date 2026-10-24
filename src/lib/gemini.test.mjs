@@ -89,13 +89,43 @@ test("public chat interface and transport use only the direct Gemini server key"
     if (originalKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = originalKey;
   }
 });
-test("direct errors discard provider and network bodies and never retry", async () => {
+test("transient failures fall back to stable models and only then surface a safe error", async () => {
   const originalFetch = globalThis.fetch;
   const originalKey = process.env.GEMINI_API_KEY;
   process.env.GEMINI_API_KEY = "offline-test-key";
   const request = buildGeminiRequest([{ role: "user", content: "oi" }]);
   try {
-    for (const status of [400, 401, 403, 404, 429, 500]) {
+    // 503 no primário → reserva responde: a conversa não fica sem resposta.
+    const seen = [];
+    globalThis.fetch = async (url) => {
+      seen.push(String(url));
+      if (seen.length === 1) return new Response("high demand", { status: 503 });
+      return Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: "ok reserva" }] } }] });
+    };
+    assert.equal(await generateGeminiContent(request), "ok reserva");
+    assert.equal(seen[0], "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent");
+    assert.equal(seen[1], "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent");
+    assert.equal(seen.length, 2);
+
+    // Todos os modelos em 429/503 → erro seguro, sem corpo do provedor, 4 tentativas.
+    for (const status of [429, 500, 503]) {
+      let calls = 0;
+      globalThis.fetch = async () => { calls++; return new Response("offline-test-key secret provider body", { status }); };
+      await assert.rejects(generateGeminiContent(request), { message: geminiErrorMessage(status) });
+      assert.equal(calls, 4);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = originalKey;
+  }
+});
+test("direct errors discard provider and network bodies and never retry permanent failures", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "offline-test-key";
+  const request = buildGeminiRequest([{ role: "user", content: "oi" }]);
+  try {
+    for (const status of [400, 401, 403, 404]) {
       let calls = 0;
       globalThis.fetch = async () => { calls++; return new Response("offline-test-key secret provider body", { status }); };
       await assert.rejects(generateGeminiContent(request), { message: geminiErrorMessage(status) });
