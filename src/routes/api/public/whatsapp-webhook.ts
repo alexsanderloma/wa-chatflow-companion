@@ -16,7 +16,8 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             payload?.instance || payload?.instanceName || payload?.data?.instance;
 
           if (!instanceName) return new Response("ok", { status: 200 });
-          if (event && event !== "messages.upsert" && event !== "MESSAGES_UPSERT") {
+          const deliveryEvent = event === 'messages.update' || event === 'MESSAGES_UPDATE';
+          if (event && event !== "messages.upsert" && event !== "MESSAGES_UPSERT" && !deliveryEvent) {
             return new Response("ignored", { status: 200 });
           }
 
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           const fromMe: boolean = !!key.fromMe;
           const whatsappMessageId: string | null = typeof key.id === "string" && key.id.trim() ? key.id.trim() : null;
           const remoteJid: string = key.remoteJid || "";
-          if (!remoteJid) return new Response("no jid", { status: 200 });
+          if (!remoteJid && !deliveryEvent) return new Response("no jid", { status: 200 });
           const isGroup = remoteJid.endsWith("@g.us");
           const suppliedToken = new URL(request.url).searchParams.get("t") || request.headers.get("x-webhook-token") || "";
           const { data: inst, error: instanceError } = await (supabaseAdmin as any)
@@ -39,6 +40,11 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           }
           const companyId = (inst as any).company_id as string;
           const userId = (inst as any).user_id as string;
+          if (deliveryEvent) {
+            const { confirmDeliveryEvent } = await import('@/lib/ai-response.server');
+            await confirmDeliveryEvent(supabaseAdmin, companyId, data);
+            return new Response('delivery-recorded', { status: 200 });
+          }
           if (isGroup) {
             if (fromMe) return new Response("group", { status: 200 });
             const { groupSupplierSenderPhone } = await import("@/lib/suppliers");
@@ -287,7 +293,8 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             .eq("numero", number)
             .order("created_at", { ascending: false })
             .limit(25);
-          const historico = (histDesc ?? []).slice().reverse();
+          const { economicalHistory, economicalMessages } = await import('@/lib/ai-economy');
+          const historico = economicalHistory((histDesc ?? []).slice().reverse());
 
           const { data: cardRow } = await supabaseAdmin
             .from("crm_cards")
@@ -329,26 +336,25 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           // Se zerou, a IA não responde — exige assinatura/recarga.
           const { getCompanyPlan } = await import("@/lib/plan-limits.server");
           const { allowsProvider } = await import("@/lib/plan-features");
-          const { data: hasCredit } = await supabaseAdmin.rpc("consume_ai_credit", {
-            _company_id: companyId,
-            _ref: number,
-          });
-          if (!hasCredit) {
-            await upsertCard(supabaseAdmin, companyId, userId, number, pushName, text, stages);
-            console.warn("[credits] créditos esgotados — IA não respondeu", companyId);
-            return new Response("no_credits", { status: 200 });
-          }
           const throttleReason = await getAiThrottleReason(supabaseAdmin, companyId, number);
           if (throttleReason) {
             await upsertCard(supabaseAdmin, companyId, userId, number, pushName, text, stages);
             console.warn("[whatsapp.safety] resposta pausada", throttleReason, companyId, number);
             return new Response(throttleReason, { status: 200 });
           }
+          const { reserveResponse, finishResponse, sendAccountedPart } = await import('@/lib/ai-response.server');
+          const reservation = await reserveResponse(supabaseAdmin, companyId, inserted.id);
+          if (!reservation.claimed || !reservation.id) return new Response(reservation.status, { status: 200 });
+          const chargeId = reservation.id;
+          let sendStarted = false;
+          try {
+          const plan = await getCompanyPlan(companyId);
+          const usage = { companyId, chargeId, planSlug: plan.slug };
 
           // Mídia: só é baixada/analisada aqui, depois de todas as saídas que impedem resposta.
           if (media && shouldAnalyzeMedia({ hasMedia: true, optOut: false, paused: false, offHours: false, superseded: false, humanActive: false, noCredit: false, throttled: false })) {
             const { analyzeWhatsappMedia } = await import("@/lib/whatsapp-media.server");
-            const analysis = await analyzeWhatsappMedia(instanceName, data, media);
+            const analysis = await analyzeWhatsappMedia(instanceName, data, media, usage);
             const safeText = crmTextFor(media, analysis);
             if (safeText !== text && inserted?.id) {
               const { error: updErr } = await (supabaseAdmin as any)
@@ -359,7 +365,6 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             // A última fala do contato é a mídia: entrega descrição/transcrição real (ou aviso honesto).
             messages[messages.length - 1] = { role: "user", content: aiUserTextFor(media, analysis) };
           }
-          const plan = await getCompanyPlan(companyId);
           let providerChoice = ((cfg as any)?.ai_provider || "gemini") as string;
           let modelChoice = ((cfg as any)?.ai_model || "google/gemini-2.5-flash") as string;
           if (!allowsProvider(plan.slug, providerChoice)) {
@@ -369,20 +374,26 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
 
           let rawReply = "";
           try {
-            rawReply = await lovableAiChat(messages, {
+            rawReply = await lovableAiChat(economicalMessages(messages), {
               provider: providerChoice,
               model: modelChoice,
               openaiKey: (cfg as any)?.openai_api_key || "",
               anthropicKey: (cfg as any)?.anthropic_api_key || "",
+              usage,
             });
           } catch (e: any) {
             console.error("[ai]", e?.message);
+            await finishResponse(supabaseAdmin, chargeId, 'released');
             return new Response("ai-error", { status: 502 });
           }
 
           const { parts, stage, agendar, escalar } = parseAiOutput(rawReply, stages.map((s) => ({ nome: s.nome, tipo: s.tipo })));
           const { escalationCustomerParts, hasUnmarkedHumanPromise } = await import("@/lib/human-escalation");
           let finalParts = sanitizeAiParts(responderEmPartes ? parts : [parts.join(" ")]);
+          if (!finalParts.length) {
+            await finishResponse(supabaseAdmin, chargeId, 'released');
+            return new Response('empty-ai-response', { status: 200 });
+          }
           const escalationReason = escalar || (hasUnmarkedHumanPromise(finalParts)
             ? "A IA indicou que a equipe precisa assumir o atendimento."
             : null);
@@ -413,6 +424,13 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             }
           }
 
+          const { data: currentPause, error: pauseError } = await supabaseAdmin.from('contact_pause').select('pausado').eq('company_id', companyId).eq('numero', number).maybeSingle();
+          const { data: newest, error: newestError } = await supabaseAdmin.from('mensagens').select('id').eq('company_id', companyId).eq('numero', number).eq('direcao', 'entrada').gt('created_at', myCreatedAt).limit(1);
+          // Human escalation deliberately pauses the contact but permits its truthful acknowledgement.
+          if (pauseError || newestError || (currentPause?.pausado && !escalationReason) || newest?.length) {
+            await finishResponse(supabaseAdmin, chargeId, 'released');
+            return new Response('blocked-before-send', { status: 200 });
+          }
           for (let i = 0; i < finalParts.length; i++) {
             const part = finalParts[i];
             if (!part) continue;
@@ -420,7 +438,9 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
               const typingMs = Math.min(3000, 1200 + Math.floor(part.length * 35));
               await evoSendPresence(instanceName, number, "composing", typingMs);
               await new Promise((r) => setTimeout(r, typingMs));
-              await evoSendText(instanceName, number, part);
+              sendStarted = true;
+              const receipt = await sendAccountedPart(supabaseAdmin, chargeId, companyId, i, () => evoSendText(instanceName, number, part));
+              if (!receipt.accepted && !receipt.delivered) break;
               await supabaseAdmin.from("mensagens").insert({
                 company_id: companyId,
                 user_id: userId,
@@ -437,6 +457,7 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
               console.error("[send]", e?.message);
             }
           }
+          await finishResponse(supabaseAdmin, chargeId, 'pending');
 
           await upsertCard(
             supabaseAdmin,
@@ -450,6 +471,10 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
           );
 
           return new Response("ok", { status: 200 });
+          } catch (error) {
+            await finishResponse(supabaseAdmin, chargeId, sendStarted ? 'pending' : 'released');
+            throw error;
+          }
           });
         } catch (e: any) {
           console.error("[webhook]", e?.message, e?.stack);

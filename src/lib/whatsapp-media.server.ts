@@ -1,22 +1,24 @@
-// Server-only: baixa a mídia pela Evolution API e analisa com Gemini direto.
+// Server-only: downloads media then analyzes through the same Lovable Gateway.
 // Base64 só existe em memória durante a requisição; nunca é logado nem salvo.
 import { evoGetMediaBase64 } from "./evolution.server";
-import { generateGeminiContent } from "./gemini.server";
+import { gatewayChat } from "./ai-gateway.server";
+import type { AiUsageContext } from "./ai-usage.server";
 import {
   base64ByteLength,
   buildMediaAnalysisMessages,
+  audioFormatFromMime,
   maxBytesFor,
   type DetectedMedia,
 } from "./whatsapp-media";
 
-const MEDIA_MODEL = "gemini-3.8-flash";
+const MEDIA_MODEL = "google/gemini-2.5-flash";
 const DOWNLOAD_TIMEOUT_MS = 15_000;
-const ANALYSIS_TIMEOUT_MS = 30_000;
 
 export async function analyzeWhatsappMedia(
   instanceName: string,
   data: any,
   media: DetectedMedia,
+  usage: AiUsageContext = {},
 ): Promise<string | null> {
   const limit = maxBytesFor(media.kind);
   if (media.fileLength && media.fileLength > limit) {
@@ -35,10 +37,15 @@ export async function analyzeWhatsappMedia(
       console.warn("[media] download acima do limite", media.kind);
       return null;
     }
-    const out = await generateGeminiContent(
-      { contents: buildMediaAnalysisMessages(media, base64) }, MEDIA_MODEL,
-      AbortSignal.timeout(ANALYSIS_TIMEOUT_MS),
-    );
+    const native = buildMediaAnalysisMessages(media, base64);
+    const instruction = native[0]?.parts.find(part => 'text' in part);
+    const content: Array<Record<string, unknown>> = [
+      { type: 'text', text: instruction && 'text' in instruction ? instruction.text : '' },
+      media.kind === 'image'
+        ? { type: 'image_url', image_url: { url: `data:${media.mimetype};base64,${base64}` } }
+        : { type: 'input_audio', input_audio: { data: base64, format: audioFormatFromMime(media.mimetype) } },
+    ];
+    const out = await gatewayChat([{ role: 'user', content }], MEDIA_MODEL, { ...usage, purpose: media.kind });
     base64 = null;
     return out ? out.slice(0, 2000) : null;
   } catch {
