@@ -44,8 +44,7 @@ type ConnectResult = {
 export const connectWhatsapp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { numero?: string } | undefined) => {
-    const { normalizePairingNumber } = { normalizePairingNumber: (v?: string) => (v ?? "").replace(/\D/g, "") };
-    const numero = normalizePairingNumber(d?.numero);
+    const numero = (d?.numero ?? "").replace(/\D/g, "");
     if (d?.numero !== undefined && (numero.length < 10 || numero.length > 15)) throw new Error("Informe o número com DDI e DDD, ex.: 5531999998888.");
     return { numero: numero || undefined };
   })
