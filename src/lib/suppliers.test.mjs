@@ -53,3 +53,20 @@ test("classifies supplier messages without storing base64", () => {
   assert.ok(!JSON.stringify(pdf).includes("AAAA"));
   assert.equal(classifySupplierMessage({ audioMessage: { mimetype: "audio/ogg", seconds: 5 } }).tipo, "audio");
 });
+
+import { parseBrlToCents, mapCatalogRows } from "./suppliers.ts";
+test("parses Brazilian and dotted prices to cents", () => {
+  assert.equal(parseBrlToCents("R$ 1.299,90"), 129990);
+  assert.equal(parseBrlToCents("1299.9"), 129990);
+  assert.equal(parseBrlToCents("1,299.90"), 129990);
+  assert.equal(parseBrlToCents(""), null);
+});
+test("maps catalog CSV rows by header aliases and skips empty products", () => {
+  const r = mapCatalogRows([["Produto", "Marca", "Preço", "Estoque"], ["iPhone 15", "Apple", "4.500,00", "3"], ["", "x", "1", ""]]);
+  assert.equal(r.items.length, 1);
+  assert.equal(r.skipped, 1);
+  assert.deepEqual(r.items[0], { produto: "iPhone 15", marca: "Apple", modelo: null, categoria: "iphone", custo_cents: 450000, disponibilidade: "3" });
+});
+test("rejects files without a product column", () => {
+  assert.throws(() => mapCatalogRows([["marca", "preco"], ["a", "1"]]), /produto/);
+});
