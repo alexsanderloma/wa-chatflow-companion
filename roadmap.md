@@ -1,5 +1,10 @@
 # FLOWA reference-led presentation replacement
 
+## Automatic reply production failure
+- [x] Confirmed unanswered inbound messages with consumed credits, aborted production webhooks and a Google response taking 127 seconds.
+- [x] Added authenticated post-persistence heartbeat streaming, explicit AI failure outcome and supported low thinking for the existing primary model; 33 regression tests passed and automatic build OK. Real Google transport completed in 54 seconds with 11 heartbeat chunks.
+- [ ] Publish and verify a fresh customer message through the live WhatsApp receiver and outbound readback; blocked on explicit publication authorization and a new customer message. No recipient delivery claimed.
+
 ## Complete phone navigation
 - [x] Add a bottom Menu with all existing workspace destinations, subscription, Master and support, preserving desktop role filtering.
 - [x] Verified authenticated Eletro Gold phone menu, navigation to Fornecedores and Conexão, dismissal and no horizontal overflow/runtime errors; automatic build OK. Not published.
