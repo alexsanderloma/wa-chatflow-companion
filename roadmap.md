@@ -2,7 +2,8 @@
 
 ## AI economy, plan credits and Master finance
 - [x] Read-only audit of current source, live plan values/RPCs, billing records, Gateway request samples and authenticated model catalog.
-- [ ] Implement approved stages: correct future plan allowances, idempotent delivered-response charging, measured AI economy and Master-only finance; blocked on approval of the plan.
+- [x] Corrected future 1.000/6.000/30.000 allowances without changing prices/current balances; added reserved delivered-response charging, payment/cycle-idempotent paid resets, Gateway usage capture, flexible economy context and Master-only finance.
+- [x] 63 relevant tests passed, controlled 2.5 Gateway request succeeded without customers, authenticated Master report rendered; shared-database transactional scenario tests remain unverified.
 - [ ] Analyze affected company balances separately; apply corrections only after specific authorization. Do not publish without authorization.
 
 ## Automatic reply production failure
