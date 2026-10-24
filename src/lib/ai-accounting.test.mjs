@@ -1,0 +1,14 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { MONTHLY_ALLOWANCES, MONTHLY_PRICES_CENTS, simulatePrice, estimateGatewayCredits, deliveredStatus, paymentKey } from './ai-accounting.ts';
+test('Starter entrega 1.000 créditos', () => assert.equal(MONTHLY_ALLOWANCES.starter, 1000));
+test('Pro entrega 6.000 créditos', () => assert.equal(MONTHLY_ALLOWANCES.pro, 6000));
+test('Business entrega 30.000 créditos', () => assert.equal(MONTHLY_ALLOWANCES.business, 30000));
+test('preços continuam 97/197/497', () => assert.deepEqual(MONTHLY_PRICES_CENTS, { starter:9700, pro:19700, business:49700 }));
+test('custo 100 multiplicado por 3 resulta em 300 antes de despesas', () => assert.equal(simulatePrice(100, 0, 3, 0).recommended, 300));
+test('despesas e segurança entram depois do multiplicador', () => assert.equal(simulatePrice(100, 20, 3, 10).recommended, 352));
+test('500 entrada / 200 saída por mil respostas = 2,6 créditos', () => assert.equal(estimateGatewayCredits(500000, 200000), 2.6));
+test('tokens desconhecidos não são custo zero', () => assert.equal(estimateGatewayCredits(null, 200), null));
+test('áudio usa sua tarifa própria', () => assert.equal(estimateGatewayCredits(500, 200, true), 0.004));
+test('aceitação de envio não comprova entrega', () => { assert.equal(deliveredStatus('PENDING'), false); assert.equal(deliveredStatus('SERVER_ACK'), false); assert.equal(deliveredStatus('DELIVERY_ACK'), true); });
+test('eventos diferentes do mesmo pagamento têm a mesma chave', () => { assert.equal(paymentKey({provider:'asaas',externalPaymentId:'pay1'}), 'asaas:pay1'); assert.throws(()=>paymentKey({provider:'asaas'}), /identificador/); });

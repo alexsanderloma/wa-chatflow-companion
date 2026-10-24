@@ -1,7 +1,7 @@
-// Multi-provider AI chat. Gemini uses Google's official API with a server key.
+// Multi-provider AI chat. Gemini uses Lovable AI Gateway; direct Google is kept inactive.
 // OpenAI e Anthropic usam a chave da própria empresa.
-import { buildGeminiRequest } from "./gemini";
-import { generateGeminiContent } from "./gemini.server";
+import { gatewayChat } from "./ai-gateway.server";
+import type { AiUsageContext } from "./ai-usage.server";
 
 export interface ChatMsg {
   role: "system" | "user" | "assistant";
@@ -13,11 +13,12 @@ export interface AiProviderConfig {
   model?: string;
   openaiKey?: string;
   anthropicKey?: string;
+  usage?: AiUsageContext;
 }
 
 export async function lovableAiChat(
   messages: ChatMsg[],
-  modelOrConfig: string | AiProviderConfig = "gemini-3.8-flash",
+  modelOrConfig: string | AiProviderConfig = "google/gemini-2.5-flash",
 ): Promise<string> {
   const cfg: AiProviderConfig =
     typeof modelOrConfig === "string"
@@ -37,7 +38,7 @@ export async function lovableAiChat(
     const model = cfg.model || "claude-3-5-sonnet-latest";
     return anthropicChat(key, model, messages);
   }
-  return generateGeminiContent(buildGeminiRequest(messages), cfg.model);
+  return gatewayChat(messages, cfg.model, cfg.usage);
 }
 
 async function openAiChat(key: string, model: string, messages: ChatMsg[]): Promise<string> {

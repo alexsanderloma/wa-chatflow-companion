@@ -15,12 +15,13 @@ export const getMyCredits = createServerFn({ method: "GET" })
       .maybeSingle();
     if (!cu) return { saldo: 0, origem: "trial", resetam_em: null, ledger: [] as any[] };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [comp, led] = await Promise.all([
+    const [comp, led, reservations] = await Promise.all([
       supabaseAdmin.from("company").select("creditos_saldo, creditos_origem, creditos_resetam_em").eq("id", cu.company_id).maybeSingle(),
       supabaseAdmin.from("credit_ledger").select("delta, saldo_apos, motivo, ref, created_at").eq("company_id", cu.company_id).order("created_at", { ascending: false }).limit(20),
+      supabaseAdmin.from('ai_response_charge').select('id', {count:'exact',head:true}).eq('company_id',cu.company_id).in('status',['reserved','pending']),
     ]);
     return {
-      saldo: comp.data?.creditos_saldo ?? 0,
+      saldo: Math.max(0, (comp.data?.creditos_saldo ?? 0) - (reservations.count ?? 0)),
       origem: comp.data?.creditos_origem ?? "trial",
       resetam_em: comp.data?.creditos_resetam_em ?? null,
       ledger: led.data ?? [],
