@@ -43,6 +43,13 @@
       "when": 1792790538922,
       "tag": "0005_master_company_plan_management",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792804889326,
+      "tag": "0006_master_explicit_access_periods",
+      "breakpoints": true
     }
   ]
 }

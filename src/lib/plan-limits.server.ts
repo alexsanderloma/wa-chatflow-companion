@@ -1,5 +1,6 @@
 // SERVER ONLY. Usa supabaseAdmin para resolver plano + uso, sem expor chave.
 import { PLAN_LABEL, normalizePlanSlug, type PlanSlug } from "./plan-features";
+import { instanceLimit } from "./instance-limit";
 
 export type LimitKind = "instancias" | "usuarios" | "contatos" | "mensagens";
 
@@ -56,7 +57,7 @@ export async function getCompanyPlan(companyId: string): Promise<CompanyPlan> {
     slug,
     nome: row?.nome || PLAN_LABEL[slug],
     limites: {
-      instancias: 1,
+      instancias: instanceLimit(row?.limite_instancias),
       usuarios: Number(row?.limite_usuarios ?? 1),
       contatos: Number(row?.limite_contatos ?? 1000),
       mensagens: Number(row?.limite_mensagens ?? 1500),

@@ -55,6 +55,10 @@ export const connectWhatsapp = createServerFn({ method: "POST" })
       .eq("company_id", companyId)
       .maybeSingle();
     if (selErr) throw new Error("Não foi possível ler a conexão atual. Tente novamente.");
+    if (!existing) {
+      const { assertWithinLimit } = await import("./plan-limits.server");
+      await assertWithinLimit(companyId, "instancias");
+    }
     const instanceName: string = existing?.instance_name || deriveInstanceName(companyId);
     const webhookToken: string = existing?.webhook_token || crypto.randomUUID();
     const webhookUrl = buildWebhookUrl(webhookToken);
@@ -160,11 +164,12 @@ export const checkWhatsappStatus = createServerFn({ method: "POST" })
     const companyId = await resolveCompanyId(supabase, userId);
     const { evoState, evoFetchNumberFromInstance, evoSetWebhook } = await import("./evolution.server");
 
-    const { data: row } = await (supabase as any)
+    const { data: row, error: rowError } = await (supabase as any)
       .from("whatsapp_instances")
       .select("instance_name,status,numero,webhook_token,webhook_configured_at")
       .eq("company_id", companyId)
       .maybeSingle();
+    if (rowError) throw new Error("Não foi possível consultar a conexão salva.");
     if (!row) return { status: "disconnected", state: null, numero: null, qrBase64: null, code: null };
 
     let state: string | null = null;
@@ -174,6 +179,12 @@ export const checkWhatsappStatus = createServerFn({ method: "POST" })
       const { parseEvoState } = await import("./evolution-flow");
       state = parseEvoState(s);
     } catch (e) {
+      const { EvolutionError } = await import("./evolution-flow");
+      if (e instanceof EvolutionError && e.code === "instancia_ausente") {
+        const { error } = await supabase.from("whatsapp_instances").update({ status: "disconnected" }).eq("company_id", companyId);
+        if (error) throw new Error("Não foi possível atualizar o estado da conexão.");
+        return { status: "disconnected", state: "close", numero: row.numero ?? null, qrBase64: null, code: null };
+      }
       stateError = true;
       console.warn("[evolution.state]", e);
     }
@@ -238,6 +249,26 @@ export const disconnectWhatsapp = createServerFn({ method: "POST" })
         .eq("company_id", companyId);
     }
     return { ok: true };
+  });
+
+export const removeWhatsappConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const companyId = await resolveCompanyId(supabase, userId);
+    const { data: row, error } = await supabase.from("whatsapp_instances")
+      .select("instance_name,status").eq("company_id", companyId).maybeSingle();
+    if (error) throw new Error("Não foi possível consultar a conexão salva.");
+    if (row && row.status !== "disconnected") throw new Error("Desconecte a linha antes de remover a conexão.");
+    const { evoDelete } = await import("./evolution.server");
+    const { removeConnectionRecord } = await import("./connection-removal");
+    return removeConnectionRecord(
+      async () => { if (row) await evoDelete(row.instance_name); },
+      async () => {
+        const { error: deleteError } = await supabase.from("whatsapp_instances").delete().eq("company_id", companyId);
+        if (deleteError) throw new Error("Não foi possível remover a conexão salva. Tente novamente.");
+      },
+    );
   });
 
 export const sendWhatsappText = createServerFn({ method: "POST" })

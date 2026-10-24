@@ -6,9 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Power, QrCode } from "lucide-react";
+import { Loader2, RefreshCw, Power, QrCode, Trash2 } from "lucide-react";
 import { brand } from "@/config/brand";
-import { connectWhatsapp, checkWhatsappStatus, disconnectWhatsapp, diagnoseWhatsapp } from "@/lib/evolution.functions";
+import { connectWhatsapp, checkWhatsappStatus, disconnectWhatsapp, diagnoseWhatsapp, removeWhatsappConnection } from "@/lib/evolution.functions";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { usePlanFeatures } from "@/hooks/use-plan-features";
 import { PlanUsageBadge } from "@/components/plan-usage-badge";
 import { connectionRequests, connectionStatus, pairingView, type ConnectionStatus } from "@/lib/connection-ui";
@@ -31,6 +32,8 @@ function ConexaoPage() {
   const check = useServerFn(checkWhatsappStatus);
   const disconnect = useServerFn(disconnectWhatsapp);
   const diagnose = useServerFn(diagnoseWhatsapp);
+  const remove = useServerFn(removeWhatsappConnection);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const plan = usePlanFeatures();
 
   const [loading, setLoading] = useState(false);
@@ -100,6 +103,7 @@ function ConexaoPage() {
       void operation.finally(() => { actionBusy.current = false; if (mounted.current) setPending(false); }).catch(() => {});
       const r = await withTimeout(operation, 90_000);
       if (!mounted.current) return;
+      await plan.refresh();
       if (r.diagnostic === "conectada") {
         setStatus("connected"); stopPolling(); toast.success("Já está conectado!");
         void doCheck(true);
@@ -137,6 +141,19 @@ function ConexaoPage() {
     finally { actionBusy.current = false; if (mounted.current) setLoading(false); }
   }
 
+  async function doRemove() {
+    if (actionBusy.current) return;
+    actionBusy.current = true; requests.current.next(); stopPolling(); setLoading(true);
+    try {
+      const result = await remove();
+      setStatus("disconnected"); setNumero(null); setQr(null); setProblem(null); setDiag(null);
+      await plan.refresh();
+      toast.success("Conexão removida; espaço liberado para conectar novamente.");
+      if (!result.remoteRemoved) setDiag("O registro local foi removido. O servidor do WhatsApp não confirmou a remoção remota.");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Não foi possível remover a conexão."); }
+    finally { actionBusy.current = false; if (mounted.current) setLoading(false); }
+  }
+
   const statusBadge =
     status === "unknown" ? <Badge variant="outline">{checking ? "Verificando…" : "Não confirmado"}</Badge>
     : status === "connected" ? <Badge className="bg-success-soft text-success border-success/30">Conectado</Badge>
@@ -166,6 +183,7 @@ function ConexaoPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            {status === "disconnected" && plan.usage.instancias > 0 && <Button variant="destructive" size="sm" disabled={loading || checking || pending} onClick={() => setConfirmRemove(true)}><Trash2 className="size-4 mr-1.5" />Remover conexão</Button>}
             <Button variant="outline" size="sm" onClick={() => doCheck()} disabled={loading || checking || pending}>
               <RefreshCw className={`size-4 mr-1.5 ${checking ? "animate-spin" : ""}`} /> Atualizar
             </Button>
@@ -214,6 +232,15 @@ function ConexaoPage() {
         {loading && <p role="status" className="mt-4 text-sm text-muted-foreground">Aguardando o servidor do WhatsApp…</p>}
         {diag && <p role="status" className="mt-4 text-sm text-warning">{diag}</p>}
       </Card>
+      <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover conexão WhatsApp?</AlertDialogTitle>
+            <AlertDialogDescription>O vínculo desta empresa será removido e o espaço do plano será liberado. Tentaremos remover também a instância no servidor do WhatsApp. Conversas e dados da empresa no FLOWA serão preservados.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={doRemove}>Confirmar remoção</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getPlanUsage } from "@/lib/plan.functions";
 import { featuresFor, normalizePlanSlug, type PlanFeatures, type PlanSlug } from "@/lib/plan-features";
+import { instanceLimit } from "@/lib/instance-limit";
 
 export type PlanUsageState = {
   loading: boolean;
@@ -37,7 +38,7 @@ export function usePlanFeatures(): PlanUsageState {
     slug,
     planName: state?.plan?.nome || "Starter",
     features: featuresFor(slug),
-    limites: { ...(state?.plan?.limites || { usuarios: 1, contatos: 1000, mensagens: 1500 }), instancias: 1 },
+    limites: { ...(state?.plan?.limites || { usuarios: 1, contatos: 1000, mensagens: 1500 }), instancias: instanceLimit(state?.plan?.limites?.instancias) },
     usage: state?.usage || { instancias: 0, usuarios: 0, contatos: 0, mensagens: 0 },
     refresh: load,
   };

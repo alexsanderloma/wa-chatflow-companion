@@ -566,6 +566,7 @@ export type Database = {
           id: string
           inscricao_estadual: string | null
           logo_url: string | null
+          master_access_until: string | null
           nome: string
           nome_fantasia: string | null
           numero: string | null
@@ -604,6 +605,7 @@ export type Database = {
           id?: string
           inscricao_estadual?: string | null
           logo_url?: string | null
+          master_access_until?: string | null
           nome: string
           nome_fantasia?: string | null
           numero?: string | null
@@ -642,6 +644,7 @@ export type Database = {
           id?: string
           inscricao_estadual?: string | null
           logo_url?: string | null
+          master_access_until?: string | null
           nome?: string
           nome_fantasia?: string | null
           numero?: string | null
@@ -2067,15 +2070,26 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: never; Returns: boolean }
-      master_manage_company_plan: {
-        Args: {
-          _action: string
-          _actor_id: string
-          _company_id: string
-          _plan_id: string
-        }
-        Returns: Json
-      }
+      master_manage_company_plan:
+        | {
+            Args: {
+              _action: string
+              _actor_id: string
+              _company_id: string
+              _plan_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _action: string
+              _actor_id: string
+              _company_id: string
+              _period: string
+              _plan_id: string
+            }
+            Returns: Json
+          }
       seed_fin_categorias: { Args: { _company_id: string }; Returns: undefined }
       topup_plan_credits: {
         Args: { _company_id: string; _plan_slug: string }

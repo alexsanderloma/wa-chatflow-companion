@@ -14,6 +14,7 @@ export function MasterCompanyPlanDialog({ companyId, onClose, onSaved }: { compa
   const mutate = useServerFn(manageCompanyPlan);
   const [data, setData] = useState<PlanData | null>(null);
   const [planId, setPlanId] = useState("");
+  const [period, setPeriod] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -22,7 +23,7 @@ export function MasterCompanyPlanDialog({ companyId, onClose, onSaved }: { compa
 
   useEffect(() => {
     let live = true;
-    setData(null); setPlanId(""); setError(""); setConfirmRemoval(false);
+    setData(null); setPlanId(""); setPeriod(""); setError(""); setConfirmRemoval(false);
     if (!companyId) return;
     setLoading(true);
     fetchPlan({ data: { companyId } }).then((result) => {
@@ -39,7 +40,7 @@ export function MasterCompanyPlanDialog({ companyId, onClose, onSaved }: { compa
     if (!companyId || !data || saving) return;
     setSaving(true);
     try {
-      const result = await mutate({ data: { companyId, planId, action } });
+      const result = await mutate({ data: { companyId, planId, action, period } });
       toast.success(result.changed ? action === "cancel" ? "Plano removido; acesso suspenso" : "Plano atualizado internamente" : "O plano já está neste estado");
       await onSaved();
       onClose();
@@ -54,7 +55,7 @@ export function MasterCompanyPlanDialog({ companyId, onClose, onSaved }: { compa
         <div className="border-b pb-4 space-y-1">
           <p>Plano atual: <strong>{current?.plan?.nome ?? "Sem plano operacional"}</strong></p>
           <p>Status da assinatura: <strong>{current ? subscriptionStatusLabel(current.status) : "Sem assinatura operacional"}</strong></p>
-          <p className="text-muted-foreground">Empresa: {data.company.status_cobranca}{current?.current_period_end ? ` · Período até ${new Date(current.current_period_end).toLocaleDateString("pt-BR")}` : ""}</p>
+          <p className="text-muted-foreground">Empresa: {data.company.status_cobranca}{current?.current_period_end ? ` · Período até ${new Date(current.current_period_end).toLocaleDateString("pt-BR")}` : current?.provider === "manual" ? " · Acesso definitivo" : ""}</p>
         </div>
         <p className="text-muted-foreground">Alteração interna de acesso ao FLOWA. Não altera nem cancela cobranças ou assinaturas no Asaas ou em outro provedor.</p>
         <div className="space-y-2">
@@ -65,12 +66,24 @@ export function MasterCompanyPlanDialog({ companyId, onClose, onSaved }: { compa
           </Select>
           {data.plans.length === 0 && <p className="text-muted-foreground">Nenhum plano ativo disponível.</p>}
         </div>
+        <div className="space-y-2">
+          <label htmlFor="company-period">Período de acesso obrigatório</label>
+          <Select value={period} onValueChange={setPeriod} disabled={saving}>
+            <SelectTrigger id="company-period"><SelectValue placeholder="Selecione um período" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="trial_7">7 dias — trial</SelectItem>
+              <SelectItem value="temporary_30">30 dias — acesso temporário</SelectItem>
+              <SelectItem value="permanent">Definitivo — somente Master</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-muted-foreground">Trial limitado a 7 dias. Acesso de 30 dias expira automaticamente; definitivo não tem vencimento. Repetir a mesma concessão vigente não renova o prazo.</p>
+        </div>
         {confirmRemoval ? <div className="border border-destructive/40 rounded-md p-4 space-y-3" role="alert">
           <p className="font-medium">Remover o plano e suspender o acesso imediatamente?</p>
           <p>Os dados e o histórico serão preservados. Cancele separadamente qualquer cobrança externa no Asaas.</p>
           <div className="flex flex-wrap gap-2"><Button variant="destructive" disabled={saving} onClick={() => save("cancel")}>Confirmar remoção</Button><Button variant="outline" disabled={saving} onClick={() => setConfirmRemoval(false)}>Voltar</Button></div>
         </div> : <div className="flex flex-wrap gap-2">
-          <Button disabled={saving || !planId} onClick={() => save("assign")}>{saving && <Loader2 className="size-4 animate-spin" />}{current ? "Trocar plano" : "Atribuir plano"}</Button>
+          <Button disabled={saving || !planId || !period} onClick={() => save("assign")}>{saving && <Loader2 className="size-4 animate-spin" />}{current ? "Trocar plano" : "Atribuir plano"}</Button>
           <Button variant="destructive" disabled={saving || (!current && data.company.status_cobranca === "suspenso")} onClick={() => setConfirmRemoval(true)}>Remover plano</Button>
         </div>}
         <section className="border-t pt-4 space-y-2"><h3 className="font-semibold">Histórico de assinaturas</h3>

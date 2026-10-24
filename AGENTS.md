@@ -2,7 +2,7 @@
 
 - Checkout upgrade is explicit and support-only until provider updates and entitlement reconciliation are implemented together; ordinary payment reuses only matching-plan Asaas subscriptions, and durable subscription reservation blocks concurrent/uncertain duplicate creation.
 
-- Master plan mutations use a service-role-only RPC after assertSuper; lock the company and atomically preserve canceled subscription history, update entitlement and write existing audit_log, without calling external billing providers.
+- Master plan mutations use a service-role-only RPC after assertSuper with an explicit access period; lock the company and atomically preserve canceled subscription history, update entitlement/expiry and write existing audit_log, without calling external billing providers. Temporary grants expire through company access RLS and the app gate; permanent grants have no expiry.
 
 - Application Supabase imports resolve through the hand-maintained connectivity wrapper, not edits to generated integrations; only live browser hosts use the allowlisted same-origin HTTP proxy, with the original session key and independent direct Realtime, so regeneration, preview authentication and RLS remain intact.
 
@@ -15,3 +15,4 @@
 - Outbound customer integrations are a contract: webhook events are signed with the `X-Flowa-Signature` / `X-Flowa-Event` headers, and WhatsApp connection instances are named with the `flowa_` prefix. Changing either breaks live integrations, so rename them together with the docs in `MANUAL.md`.
 - WhatsApp connection is state-first and idempotent: query connectionState, create only when missing, call connect (QR) only from the explicit Connect action, never from status polling, because connect on a live session drops it.
 - Connection UI serializes status checks and invalidates stale responses across actions; pairing QR is retained only while connecting, and timed-out connect calls remain locked until their underlying request settles to prevent duplicate attempts.
+- Disconnected connection removal uses the authenticated company's RLS client; remote deletion is best effort but local deletion must succeed before usage is refreshed. Instance limits come from the linked plan, not a fixed UI/backend constant.
