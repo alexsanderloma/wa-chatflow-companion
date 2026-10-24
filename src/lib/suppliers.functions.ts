@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { normalizeSupplierPhone, SUPPLIER_CATEGORIES, DEFAULT_MARGINS, type SupplierCategory } from "@/lib/suppliers";
+import { normalizeSupplierPhone, SUPPLIER_CATEGORIES, DEFAULT_MARGINS, type SupplierCategory, type CatalogItemInput } from "@/lib/suppliers";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -115,6 +115,55 @@ export const saveMarginRule = createServerFn({ method: "POST" })
       { company_id: data.companyId, categoria: data.categoria, margem_liquida_pct: data.margem_liquida_pct, custos_extras_cents: data.custos_extras_cents },
       { onConflict: "company_id,categoria" },
     );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const MAX_ITEMS = 2000;
+export const addCatalogItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { companyId: string; supplierId: string; fonte: "manual" | "arquivo"; items: CatalogItemInput[] }) => {
+    if (!UUID.test(d?.supplierId || "")) throw new Error("Selecione um fornecedor");
+    const items = Array.isArray(d?.items) ? d.items : [];
+    if (!items.length) throw new Error("Nenhum item para salvar");
+    if (items.length > MAX_ITEMS) throw new Error(`Máximo de ${MAX_ITEMS} itens por envio`);
+    const clean = items.map((i) => {
+      const produto = String(i?.produto || "").trim().slice(0, 200);
+      if (!produto) throw new Error("Todo item precisa de nome do produto");
+      const c = i?.custo_cents == null ? null : Math.round(Number(i.custo_cents));
+      if (c != null && (!Number.isFinite(c) || c < 0)) throw new Error(`Custo inválido em "${produto}"`);
+      return {
+        produto, marca: String(i?.marca || "").trim().slice(0, 120) || null, modelo: String(i?.modelo || "").trim().slice(0, 120) || null,
+        categoria: SUPPLIER_CATEGORIES.includes(i?.categoria) ? i.categoria : "outros", custo_cents: c,
+        disponibilidade: String(i?.disponibilidade || "").trim().slice(0, 120) || null,
+      };
+    });
+    return { companyId: cid(d), supplierId: d.supplierId, fonte: d?.fonte === "arquivo" ? "Arquivo" : "Manual", items: clean };
+  })
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as any;
+    await assertMember(sb, context.userId, data.companyId);
+    const { data: sup, error: sErr } = await sb.from("suppliers").select("id").eq("id", data.supplierId).eq("company_id", data.companyId).maybeSingle();
+    if (sErr) throw new Error(sErr.message);
+    if (!sup) throw new Error("Fornecedor não encontrado");
+    const now = new Date().toISOString();
+    const rows = data.items.map((i) => ({ ...i, company_id: data.companyId, supplier_id: data.supplierId, fonte: data.fonte, aprovado: true, moeda: "BRL", atualizado_em: now }));
+    const { error } = await sb.from("supplier_catalog_items").insert(rows);
+    if (error) throw new Error(error.message);
+    await sb.from("suppliers").update({ ultima_atualizacao_em: now }).eq("id", data.supplierId).eq("company_id", data.companyId);
+    return { ok: true, count: rows.length };
+  });
+
+export const deleteCatalogItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { companyId: string; id: string }) => {
+    if (!UUID.test(d?.id || "")) throw new Error("id inválido");
+    return { companyId: cid(d), id: d.id };
+  })
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as any;
+    await assertMember(sb, context.userId, data.companyId);
+    const { error } = await sb.from("supplier_catalog_items").delete().eq("id", data.id).eq("company_id", data.companyId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

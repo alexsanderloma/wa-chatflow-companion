@@ -126,3 +126,67 @@ export function classifySupplierMessage(rawMsg: any): { tipo: UpdateKind; texto:
   if (text) return { tipo: "texto", texto: text, metadata: {} };
   return { tipo: "outro", texto: null, metadata: {} };
 }
+
+export type CatalogItemInput = {
+  produto: string; marca: string | null; modelo: string | null; categoria: SupplierCategory;
+  custo_cents: number | null; disponibilidade: string | null;
+};
+
+/** "R$ 1.234,56" | "1234.56" | "1,234.56" → centavos; vazio/inválido → null. */
+export function parseBrlToCents(input: unknown): number | null {
+  let s = String(input ?? "").replace(/[^\d.,-]/g, "");
+  if (!s) return null;
+  const lastComma = s.lastIndexOf(","), lastDot = s.lastIndexOf(".");
+  if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
+  else s = s.replace(/,/g, "");
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null;
+}
+
+const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const HEADER_ALIASES: Record<keyof CatalogItemInput, string[]> = {
+  produto: ["produto", "nome", "item", "descricao", "product"],
+  marca: ["marca", "brand", "fabricante"],
+  modelo: ["modelo", "model", "versao"],
+  categoria: ["categoria", "category", "tipo"],
+  custo_cents: ["custo", "preco", "valor", "price", "preco custo", "valor custo"],
+  disponibilidade: ["disponibilidade", "estoque", "status", "qtd", "quantidade"],
+};
+
+export function toCategory(v: unknown): SupplierCategory {
+  const n = norm(String(v ?? ""));
+  const hit = SUPPLIER_CATEGORIES.find((c) => n === c || n === norm(CATEGORY_LABELS[c]));
+  if (hit) return hit;
+  if (n.includes("iphone")) return "iphone";
+  if (n.includes("android") || n.includes("samsung") || n.includes("xiaomi") || n.includes("motorola")) return "android";
+  if (n.includes("tablet") || n.includes("ipad")) return "tablet";
+  if (n.includes("acess")) return "acessorios";
+  if (n.includes("manut") || n.includes("reparo")) return "manutencao";
+  return "outros";
+}
+
+/** Converte linhas de planilha (1ª linha = cabeçalho) em itens. Sem coluna de produto → erro claro. */
+export function mapCatalogRows(rows: string[][]): { items: CatalogItemInput[]; skipped: number } {
+  const [header, ...body] = rows.filter((r) => r.some((c) => String(c ?? "").trim()));
+  if (!header) throw new Error("Arquivo vazio.");
+  const h = header.map((c) => norm(String(c ?? "")));
+  const col = (k: keyof CatalogItemInput) => h.findIndex((x) => HEADER_ALIASES[k].includes(x));
+  const idx = Object.fromEntries((Object.keys(HEADER_ALIASES) as (keyof CatalogItemInput)[]).map((k) => [k, col(k)])) as Record<keyof CatalogItemInput, number>;
+  if (idx.produto < 0) throw new Error("Não encontrei a coluna 'produto' no cabeçalho do arquivo.");
+  const get = (r: string[], k: keyof CatalogItemInput) => (idx[k] >= 0 ? String(r[idx[k]] ?? "").trim() : "");
+  let skipped = 0;
+  const items: CatalogItemInput[] = [];
+  for (const r of body) {
+    const produto = get(r, "produto").slice(0, 200);
+    if (!produto) { skipped++; continue; }
+    items.push({
+      produto,
+      marca: get(r, "marca").slice(0, 120) || null,
+      modelo: get(r, "modelo").slice(0, 120) || null,
+      categoria: toCategory(get(r, "categoria") || `${produto} ${get(r, "marca")}`),
+      custo_cents: parseBrlToCents(get(r, "custo_cents")),
+      disponibilidade: get(r, "disponibilidade").slice(0, 120) || null,
+    });
+  }
+  return { items, skipped };
+}
