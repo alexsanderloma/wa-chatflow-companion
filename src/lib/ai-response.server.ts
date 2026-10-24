@@ -14,7 +14,16 @@ export async function sendAccountedPart(admin: any, chargeId: string, companyId:
   if (error || !part) throw new Error('Falha ao registrar envio; nada foi enviado.');
   let receipt: any;
   try { receipt = await send(); }
-  catch { return { delivered: false, accepted: false, uncertain: true }; }
+  catch (error) {
+    // Explicit 4xx rejection is known failure; network/5xx can be accepted remotely.
+    const status = error && typeof error === 'object' && 'status' in error ? Number(error.status) : 0;
+    if (status >= 400 && status < 500) {
+      const { error: updateError } = await admin.from('ai_response_part').update({ status: 'failed' }).eq('id', part.id);
+      if (updateError) throw new Error('Falha ao registrar rejeição de envio.');
+      return { delivered: false, accepted: false, uncertain: false };
+    }
+    return { delivered: false, accepted: false, uncertain: true };
+  }
   const id = receipt?.key?.id || receipt?.message?.key?.id;
   const delivered = deliveredStatus(receipt?.status ?? receipt?.message?.status);
   const { error: updateError } = await admin.from('ai_response_part').update({ whatsapp_message_id: typeof id === 'string' ? id : null, status: delivered ? 'delivered' : id ? 'accepted' : 'sending' }).eq('id', part.id);
