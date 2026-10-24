@@ -15,9 +15,9 @@ Auditoria somente leitura em 24/10/2026; código, banco, saldos, assinaturas e p
 | Business | R$ 497 | 1.000 | 30.000 |
 
 - `plan.creditos_mensais` tem padrão 1.000 e os três registros ativos têm 1.000. Não há evidência de quem gravou os valores.
-- `topup_plan_credits` lê esse campo e repõe o saldo: o defeito é o catálogo, não um 1.000 fixo na função. Grava `delta` como franquia inteira mesmo quando a mudança líquida é diferente; corrigir futuros lançamentos sem reescrever antigos.
+- `topup_plan_credits` repõe o saldo pelo catálogo errado; grava delta como franquia inteira, não diferença líquida. Corrigir futuros lançamentos sem reescrever antigos.
 - `billing/webhook.ts:192–199` recarrega na ativação/renovação; consulta antirrepetição é somente Asaas, sem chave única de pagamento. Repetições/concorrência podem reaplicar recarga.
-- Starter também tem `limite_mensagens=1.500`, divergente dos 1.000 contratados. Esse contador mede mensagens enviadas, não respostas lógicas; alinhar a franquia de IA sem cobrança por bolha.
+- Starter também tem limite de 1.500 mensagens, não 1.000; alinhar sem cobrar partes como respostas.
 - Zero registros em `billing_event_log` e apenas assinaturas manuais no banco: defeito confirmado, mas não há pagamentos históricos demonstrando perdas específicas. Não corrigir saldos indiscriminadamente.
 
 ### Descontos e bloqueios
