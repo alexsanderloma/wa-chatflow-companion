@@ -1,10 +1,10 @@
-# FLOWA — Auditoria e plano de créditos, economia da IA e finanças Master
+# FLOWA — Créditos, economia da IA e finanças Master
 
 ## Limites desta etapa
 
 Auditoria somente leitura em 24/10/2026; código, banco, saldos, assinaturas e preços intactos. Sem geração real, mensagem a cliente ou publicação. Aprovação não autoriza publicação nem correção retroativa.
 
-## 1. Auditoria comprovada
+## 1. Auditoria
 
 ### Franquias e causa dos 1.000 créditos
 
@@ -54,7 +54,7 @@ Hipótese: uma resposta por crédito FLOWA, 500 tokens entrada/200 saída tarifa
 
 1.000 respostas neste cenário = 2,6 créditos Lovable. Metas não são tetos. Contexto, raciocínio tarifado, mídia e tentativas mudam a conta; Cloud, despesas e implantação não incluídos. Créditos FLOWA e Lovable são diferentes; lucro e economia reais desconhecidos.
 
-## 3. Etapas de implementação após aprovação
+## 3. Implementação após aprovação
 
 ### Etapa A — Créditos prioritários
 
