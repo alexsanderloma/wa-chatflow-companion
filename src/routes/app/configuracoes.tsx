@@ -358,7 +358,7 @@ function FinanceiroTab() {
           </div>
         </div>
         <p className="text-sm">Inclui contas a pagar/receber, fluxo de caixa, categorias e geração automática de receita quando o lead vai para Ganho no CRM.</p>
-        <Button asChild><Link to="/app/checkout">Fazer upgrade</Link></Button>
+        <Button asChild><Link to="/app/checkout" search={{ mode: "upgrade" }}>Fazer upgrade</Link></Button>
       </Card>
     );
   }
