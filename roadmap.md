@@ -1,5 +1,10 @@
 # FLOWA reference-led presentation replacement
 
+## AI economy, plan credits and Master finance
+- [x] Read-only audit of current source, live plan values/RPCs, billing records, Gateway request samples and authenticated model catalog.
+- [ ] Implement approved stages: correct future plan allowances, idempotent delivered-response charging, measured AI economy and Master-only finance; blocked on approval of the plan.
+- [ ] Analyze affected company balances separately; apply corrections only after specific authorization. Do not publish without authorization.
+
 ## Automatic reply production failure
 - [x] Confirmed unanswered inbound messages with consumed credits, aborted production webhooks and a Google response taking 127 seconds.
 - [x] Added authenticated post-persistence heartbeat streaming, explicit AI failure outcome and supported low thinking for the existing primary model; 33 regression tests passed and automatic build OK. Real Google transport completed in 54 seconds with 11 heartbeat chunks.
