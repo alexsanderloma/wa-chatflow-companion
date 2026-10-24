@@ -16,8 +16,9 @@ import {
   CATEGORY_LABELS, suggestedPriceCents, supplierQuoteStatus, type SupplierCategory,
 } from "@/lib/suppliers";
 import {
-  getSuppliersOverview, saveSupplier, setSupplierActive, deleteSupplier, saveMarginRule,
+  getSuppliersOverview, saveSupplier, setSupplierActive, deleteSupplier, saveMarginRule, deleteCatalogItem,
 } from "@/lib/suppliers.functions";
+import { CatalogEntry } from "@/components/catalog-entry";
 
 export const Route = createFileRoute("/app/fornecedores")({
   head: () => ({
@@ -51,6 +52,7 @@ function FornecedoresPage() {
   const toggle = useServerFn(setSupplierActive);
   const remove = useServerFn(deleteSupplier);
   const saveMargin = useServerFn(saveMarginRule);
+  const removeItem = useServerFn(deleteCatalogItem);
 
   const [data, setData] = useState<Overview | null>(null);
   const [form, setForm] = useState(empty);
@@ -158,11 +160,13 @@ function FornecedoresPage() {
         </div>
       </Card>
 
+      {companyId && <CatalogEntry companyId={companyId} suppliers={data.suppliers} onSaved={reload} />}
+
       <Card className="overflow-x-auto p-4">
         <h2 className="mb-3 font-medium">Itens de catálogo</h2>
-        {data.items.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum item extraído ainda. As atualizações recebidas ficam pendentes de revisão.</p> : (
+        {data.items.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum item ainda. Adicione manualmente, envie um arquivo ou aguarde as mensagens dos fornecedores.</p> : (
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-2">Produto</th><th>Marca/modelo</th><th>Custo</th><th>Preço sugerido</th><th>Disponibilidade</th><th>Fonte</th><th>Atualizado</th></tr></thead>
+            <thead className="text-left text-xs text-muted-foreground"><tr><th className="py-2">Produto</th><th>Marca/modelo</th><th>Custo</th><th>Preço sugerido</th><th>Disponibilidade</th><th>Fonte</th><th>Atualizado</th><th></th></tr></thead>
             <tbody>
               {data.items.map((it: any) => {
                 const rule = data.margins.find((m) => m.categoria === it.categoria);
@@ -176,6 +180,7 @@ function FornecedoresPage() {
                     <td>{it.disponibilidade || "—"}</td>
                     <td>{it.fonte || supplierName(it.supplier_id)}</td>
                     <td>{dt(it.atualizado_em)}</td>
+                    <td><Button size="icon" variant="ghost" aria-label="Remover item" onClick={async () => { if (!confirm(`Remover ${it.produto} do catálogo?`)) return; try { await removeItem({ data: { companyId: companyId!, id: it.id } }); await reload(); } catch (e: any) { toast.error(e?.message); } }}><Trash2 className="h-4 w-4" /></Button></td>
                   </tr>
                 );
               })}
