@@ -36,11 +36,9 @@ Auditoria somente leitura, realizada em 24/10/2026. Nenhum código de aplicaçã
 
 ### Economia e finanças
 
-- O atendimento carrega 25 mensagens (`whatsapp-webhook.ts:282–289`) e envia catálogo e instruções extensas (`ai-prompt.ts`). Há candidato de redução de contexto, sem economia ou qualidade preservada já comprovadas.
-- Os transportes atuais retornam somente texto, sem persistir tokens ou custos de cada tentativa. Não existe tabela dedicada de uso/custo da IA no banco consultado.
-- O MRR atual do Master soma preços das assinaturas ativas (`master.functions.ts:40–42`), inclusive concessões manuais; isso é receita nominal esperada, não recebimento confirmado.
-- O financeiro das empresas é outro módulo. Não será reaproveitado para expor despesas internas do FLOWA aos clientes.
-- Na janela 11/10–24/10 às 15:09 UTC, registros retornados: 0,32829 créditos solicitados pelo Gateway (3.8 Flash) e 1,717932048 pelo banco; não são valores em reais nem custo do 2.5 por empresa. Amostra `01a16d62-df6f-7695-a2c2-44a3ccf9b3d7`, 24/10 às 10:09:22 UTC: 1.461 tokens de entrada/343 de saída, 0,009528 créditos; não é média representativa. Conteúdo redigido não foi reconstruído.
+- Atendimento envia 25 mensagens (`whatsapp-webhook.ts:282–289`), catálogo e instruções extensas (`ai-prompt.ts`): candidato de redução, não economia comprovada.
+- Transportes retornam texto, sem persistir tokens/custos; não existe tabela dedicada de uso. MRR Master soma preços de assinaturas ativas, inclusive manuais (`master.functions.ts:40–42`): receita nominal, não recebimento.
+- Registros 11/10–24/10 às 15:09 UTC: 0,32829 créditos solicitados pelo Gateway (3.8) e 1,717932048 pelo banco. Amostra `01a16d62-df6f-7695-a2c2-44a3ccf9b3d7`, 24/10 10:09:22 UTC: 1.461 entrada/343 saída, 0,009528 créditos; não é média do 2.5 por empresa. Conteúdo redigido não reconstruído.
 
 ## 2. Estimativa condicional da IA
 
@@ -84,22 +82,22 @@ Cada 1.000 respostas nesse cenário custam 2,6 créditos Lovable, não 1.000. Me
 - Proteger página, funções autenticadas e RLS; telemetria escrita só no servidor. Negar clientes/admins de empresa também em consultas diretas. Não expor chaves, prompts, mensagens ou mídia bruta.
 - Manter visual e menu móvel atuais; financeiro das empresas intacto; cliente vê somente plano, saldo e consumo próprio.
 
-## 4. Arquivos, segurança e testes
+## 4. Arquivos e testes previstos
 
-**Arquivos envolvidos:** `whatsapp-webhook.ts`, `billing/webhook.ts`, `credits.functions.ts`, `plan-limits.server.ts`, `plan.functions.ts`, `lovable-ai.server.ts`, `whatsapp-media.server.ts`, `ai-prompt.ts`, `agent-ai.functions.ts`, `master.tsx`; novos módulos focados de transporte Gateway, contexto, telemetria, calculadoras e página Master financeira. Preservar `gemini.server.ts` inativo para futuro.
+**Arquivos:** `whatsapp-webhook.ts`, `billing/webhook.ts`, `credits.functions.ts`, `plan-limits.server.ts`, `plan.functions.ts`, `lovable-ai.server.ts`, `whatsapp-media.server.ts`, `ai-prompt.ts`, `agent-ai.functions.ts`, `master.tsx`; novos módulos focados e página Master financeira. Preservar Google direto inativo e integrações geradas.
 
-**Banco:** `plan`, `credit_ledger`, RPCs de recarga/consumo; novos registros duráveis de reserva, recarga por pagamento, uso, despesas, tarifas e parâmetros. GRANT + RLS + políticas na mesma migração oficial; autorização Master antes do cliente administrativo, sem editar integrações geradas.
+**Banco:** catálogo, RPCs de recarga/consumo, extrato; novos registros de reservas, pagamentos, uso, despesas, tarifas e simulações. Toda tabela nova recebe GRANT, RLS e políticas na mesma migração oficial; privilégios Master verificados antes do cliente administrativo.
 
 **Testes:**
-- Franquias concretas: Starter 1.000, Pro 6.000, Business 30.000; preços 97/197/497 preservados.
-- Pagamento repetido/concurrente = uma recarga; novo ciclo = franquia correta; plano errado, evento atrasado, cancelamento e rollback.
-- Resposta entregue = um crédito; partes = um total; falha/vazio/bloqueio = zero; reserva/devolução idempotentes; concorrência no último crédito; erro técnico distinto de saldo zero; envio incerto sem duplicata.
-- Medição de texto/mídia/tentativas, valores desconhecidos, tarifas e custo por 1.000; receita recebida versus nominal, filtros/rateios; simulação 100 × 3 = 300 sem mudar preço.
-- Negar visitante/cliente/admin de empresa em página, funções e tabelas; verificar Master e conta comum autenticados.
-- Regressões offline com provedores/WhatsApp simulados; após aprovação, chamada controlada do Gateway sem cliente e avaliação de vendas, suporte, agendamento, transferência e mídia. Indisponibilidade/negação interrompe a etapa. Compilação automática, relatórios e navegação desktop/celular.
+- Starter 1.000, Pro 6.000, Business 30.000; preços 97/197/497 intactos.
+- Recarga única por pagamento, concorrência/rollback, novo ciclo, evento atrasado/plano errado.
+- Entrega = um crédito; partes = um total; falha/vazio/bloqueio = zero; devolução idempotente, último crédito concorrente, erro técnico distinto de saldo zero, envio incerto sem duplicata.
+- Uso de mídia/tentativas/valores desconhecidos; custo por 1.000, tarifas/rateios, receita real versus nominal; 100 × 3 = 300 sem alterar preços.
+- Negar cliente/admin de empresa/visitante em página, funções e banco; verificar Master e conta comum autenticados.
+- Regressões offline; após autorização, Gateway controlado sem cliente e avaliação comparativa de vendas/suporte/agendamento/transferência/mídia. Compilação automática e relatórios desktop/celular.
 
-## 6. Riscos, custos e aprovação
+## 5. Riscos, custos e autorização
 
-Maior risco: disponibilidade do 2.5 Flash, conciliação de envios incertos e recargas simultâneas. Mitigar com validação do modelo, estados duráveis, transações e testes antes de publicação. Alterações no banco compartilhado podem afetar o serviço publicado mesmo sem publicar código; mudanças de contrato precisam ser retrocompatíveis e coordenadas.
+Riscos principais: disponibilidade do 2.5, envios incertos e recargas concorrentes; mitigar com validação, estados duráveis e transações. Banco é compartilhado com produção: migrações podem afetar o site mesmo sem publicação, portanto contratos precisam ser retrocompatíveis/coordenados.
 
-Telemetria aumenta gravações/armazenamento; otimizar agregações e consultas, sem política de exclusão de histórico não autorizada. Custo de implementação e execução depende do trabalho e tráfego; não há orçamento fechado comprovado. Começar pela Etapa A, seguir com medição e só depois usar as margens para decidir preços. Nenhum preço público, saldo retroativo ou publicação está autorizado por este plano.
+Telemetria aumenta gravações/armazenamento; nenhuma exclusão de histórico não autorizada. Implementação e execução não têm orçamento fechado; dependem do trabalho/tráfego. Começar por créditos, medir e só então decidir preços. Aprovação autoriza implementar, não publicar, mudar preços ou corrigir saldos retroativos.
