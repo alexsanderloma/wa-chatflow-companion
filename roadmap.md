@@ -1,5 +1,9 @@
 # FLOWA reference-led presentation replacement
 
+## Direct Gemini production transport
+- [ ] Replace only Gemini chat/media with official Google generateContent and safe server-key handling; preserve public callers and other providers.
+- [ ] Run offline protocol, transport and regression tests; verify automatic build and report files, without secrets, live AI calls or publication.
+
 ## Production connection removal and Master periods
 - [ ] Add authenticated disconnected-line removal with remote best effort, local deletion and usage refresh; distinguish missing instance from transient errors.
 - [ ] Read actual plan instance limits and replace manual trial extension with required 7-day trial, 30-day temporary or permanent Master period; preserve audit/history.

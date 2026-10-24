@@ -26,17 +26,17 @@ test("text messages are not media", () => {
   assert.equal(detectMedia({ conversation: "oi" }), null);
 });
 
-test("image analysis request carries the real image and caption", () => {
+test("image analysis request carries inlineData with the real MIME and caption", () => {
   const d = detectMedia({ imageMessage: { mimetype: "image/png", caption: "esse modelo" } });
   const [msg] = buildMediaAnalysisMessages(d, "QUJD");
-  assert.equal(msg.content[1].image_url.url, "data:image/png;base64,QUJD");
-  assert.match(msg.content[0].text, /esse modelo/);
+  assert.deepEqual(msg.parts[1], { inlineData: { data: "QUJD", mimeType: "image/png" } });
+  assert.match(msg.parts[0].text, /esse modelo/);
 });
 
-test("audio analysis request uses input_audio", () => {
+test("audio analysis request uses inlineData with the recording MIME", () => {
   const d = detectMedia({ audioMessage: { mimetype: "audio/ogg" } });
   const [msg] = buildMediaAnalysisMessages(d, "QUJD");
-  assert.deepEqual(msg.content[1], { type: "input_audio", input_audio: { data: "QUJD", format: "ogg" } });
+  assert.deepEqual(msg.parts[1], { inlineData: { data: "QUJD", mimeType: "audio/ogg" } });
 });
 
 test("CRM text uses transcription or label, never base64", () => {
