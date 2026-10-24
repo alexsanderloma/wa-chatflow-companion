@@ -8,33 +8,31 @@ Auditoria somente leitura, realizada em 24/10/2026. Nenhum código de aplicaçã
 
 ### Franquias e causa dos 1.000 créditos
 
-| Plano | Preço atual confirmado | Créditos mensais no banco | Correção solicitada |
+| Plano | Preço confirmado | Créditos no banco | Correção |
 |---|---:|---:|---:|
 | Starter | R$ 97 | 1.000 | 1.000 |
 | Pro | R$ 197 | 1.000 | 6.000 |
 | Business | R$ 497 | 1.000 | 30.000 |
 
-- `plan.creditos_mensais` tem padrão 1.000 e os três registros ativos estão efetivamente com 1.000. A origem histórica de quem gravou esses valores não está documentada; não atribuir a uma migração específica.
-- `topup_plan_credits` lê esse campo corretamente, mas substitui o saldo pelo valor lido: por isso uma recarga Pro/Business entrega 1.000. Não soma créditos. Também grava `delta` como franquia inteira, mesmo quando a mudança líquida do saldo é diferente: futuras entradas devem registrar a diferença real, sem reescrever o histórico.
-- `billing/webhook.ts:192–199` chama a recarga ao ativar/renovar. A proteção atual contra repetição é uma consulta anterior apenas para eventos Asaas; não há chave única de pagamento/recarga no banco. Duas notificações do mesmo pagamento ou uma falha após a recarga podem reaplicá-la.
-- Há também divergência em `Starter.limite_mensagens`: 1.500 no banco, contra os 1.000 contratados. Esse limite mede mensagens enviadas, não necessariamente respostas lógicas. Alinhar a franquia de IA solicitada sem passar a cobrar cada bolha de uma resposta como um crédito.
-- O banco consultado tem zero registros em `billing_event_log` e apenas assinaturas manuais. Logo, confirmou-se o defeito dos valores e o caminho no código, mas não pagamentos Pro/Business efetivamente recarregados com erro neste histórico. Não há base para creditar todas as empresas indiscriminadamente.
+- `plan.creditos_mensais` tem padrão 1.000 e os três registros ativos têm 1.000. Não há evidência de quem gravou os valores.
+- `topup_plan_credits` lê esse campo e repõe o saldo: o defeito é o catálogo, não um 1.000 fixo na função. Grava `delta` como franquia inteira mesmo quando a mudança líquida é diferente; corrigir futuros lançamentos sem reescrever antigos.
+- `billing/webhook.ts:192–199` recarrega na ativação/renovação; consulta antirrepetição é somente Asaas, sem chave única de pagamento. Repetições/concorrência podem reaplicar recarga.
+- Starter também tem `limite_mensagens=1.500`, divergente dos 1.000 contratados. Esse contador mede mensagens enviadas, não respostas lógicas; alinhar a franquia de IA sem cobrança por bolha.
+- Zero registros em `billing_event_log` e apenas assinaturas manuais no banco: defeito confirmado, mas não há pagamentos históricos demonstrando perdas específicas. Não corrigir saldos indiscriminadamente.
 
 ### Descontos e bloqueios
 
-- `whatsapp-webhook.ts:332–380` desconta antes do bloqueio por frequência, análise de mídia e geração da IA. Falha posterior não devolve o crédito.
-- `whatsapp-webhook.ts:420–438` não consolida sucesso das partes enviadas; falhas são registradas, mas a execução pode terminar como sucesso. A resposta dividida atualmente consome um crédito total, não um por parte.
-- `consume_ai_credit` é atômica para impedir saldo negativo, mas não é idempotente: a referência recebida é o telefone, sem unicidade de resposta.
-- Erro dessa RPC pode ser interpretado como saldo esgotado porque seu `error` não é verificado.
-- A persistência de mensagens tem índice único `(company_id, whatsapp_message_id)` e o código interrompe a automação se o registro falhar. Portanto já existe proteção contra duplicação da entrada identificada; falta um registro idempotente próprio da cobrança e do resultado do envio.
-
+- `whatsapp-webhook.ts:332–380` desconta antes do bloqueio por frequência, mídia e geração. Falhas posteriores não devolvem crédito. `:420–438` não consolida resultado das partes e pode terminar como sucesso apesar de erros.
+- `consume_ai_credit` impede saldo negativo atomicamente, mas referência é telefone sem unicidade de resposta. O chamador ignora `error`, confundindo falha técnica com falta de crédito.
+- Já existe índice único de mensagem recebida `(company_id, whatsapp_message_id)` e interrupção se persistir falhar; não atribuir duplicação comprovada a esse caminho. Falta idempotência própria da cobrança/recarga.
+- Uma resposta dividida hoje consome um crédito total. A contabilização nova preservará isso e distinguirá envio confirmado, parcial, falho e incerto.
 
 ### Provedor e compatibilidade
 
-- **Divergência importante:** os arquivos atuais `lovable-ai.server.ts`, `gemini.server.ts` e `whatsapp-media.server.ts` ainda usam Google direto. O retorno ao Gateway relatado anteriormente não está presente neste estado do projeto; os módulos Gateway não existem. Não confundir memória da conversa com código persistido ou serviço publicado.
-- `LOVABLE_API_KEY` está presente no ambiente consultado; seu valor não foi exposto. O catálogo autenticado lista `google/gemini-2.5-flash` para Chat Completions, com texto, imagens e áudio, e retenção zero nessa superfície.
-- **Compatibilidade operacional pendente:** o catálogo marca o modelo como depreciado, com data de expiração 20/10/2026, já passada nesta auditoria. Estar listado não comprova que gera respostas hoje. Não foi feita geração real nesta etapa; não prometer sua disponibilidade nem substituir o modelo silenciosamente. Antes de implementar o perfil econômico, confirmar a disponibilidade e os parâmetros em um teste controlado autorizado; se o endpoint/modelo estiver indisponível, parar essa etapa e pedir decisão sobre alternativa disponível.
-- Não aplicar diretamente `thinkingConfig` do Google no Gateway. Redução de raciocínio depende dos parâmetros efetivamente aceitos pelo transporte; sua aceitação continua não verificada.
+- **Divergência:** `lovable-ai.server.ts`, `gemini.server.ts` e `whatsapp-media.server.ts` ainda usam Google direto; módulos Gateway não existem neste estado. O retorno relatado antes não está persistido aqui; não inferir o serviço publicado.
+- `LOVABLE_API_KEY` presente, sem revelar valor. Catálogo autenticado lista `google/gemini-2.5-flash` para Chat Completions, texto/imagem/áudio e retenção zero.
+- **Risco de disponibilidade:** o catálogo também marca depreciação e expiração 20/10/2026, já passada. Listagem não prova geração funcional. Não houve chamada real nesta etapa. Após autorização, validar modelo e parâmetros sem cliente; indisponibilidade/negação interrompe essa etapa até decisão, sem substituir modelo.
+- Não transportar `thinkingConfig` do Google diretamente para Gateway; redução de raciocínio depende de opção compatível ainda não validada.
 
 ### Economia e finanças
 
@@ -62,13 +60,12 @@ Cada 1.000 respostas nesse cenário custam 2,6 créditos Lovable, não 1.000. Me
 
 ### Etapa A — Créditos prioritários
 
-1. Migração restrita do catálogo para franquias 1.000/6.000/30.000, mantendo preços, trial, assinaturas e saldos atuais. Auditar todos os leitores dos limites para não contradizer franquias ou contar partes como respostas.
-2. Recarga transacional ligada à empresa, assinatura, plano e pagamento confirmado. Chave única por pagamento/ciclo evita reprocessamento, inclusive quando o provedor envia eventos diferentes para o mesmo pagamento. Conservar o comportamento de reposição da franquia, sem acúmulo silencioso.
-3. Preservar log e histórico; recargas futuras registram saldo anterior, posterior e delta real. Eventos atrasados, falhas, estornos e cancelamentos não recarregam o plano errado. Concessão manual não inventa pagamento.
-4. Reserva atômica de um crédito por resposta lógica, depois dos bloqueios. Saldo disponível considera reservas; sucesso consolida uma única cobrança. Falha conhecida antes do envio ou resposta vazia libera a reserva uma única vez; mídia/tentativas extras não descontam créditos FLOWA adicionais.
-5. Persistir o resultado de cada parte. Uma resposta com alguma parte confirmada continua sendo uma cobrança única, identificada como parcial se necessário. Resultado de envio incerto fica pendente de conciliação: não reenviar nem devolver automaticamente como se fosse falha comprovada. Identificar o que a Evolution confirma (aceitação ou entrega) e usar confirmação de entrega quando disponível; não chamar aceitação de entrega efetiva.
-6. Separar erro técnico de falta real de crédito e revalidar pausa/supressão antes de enviar. Não alterar os comandos ou as regras existentes.
-7. Entregar análise das empresas potencialmente afetadas, com valores comprovados/propostos e lacunas. Nenhum ajuste retroativo sem autorização específica; eventual correção terá chave única e lançamento compensatório, sem apagar histórico.
+1. Corrigir somente catálogo/franquias futuras para 1.000/6.000/30.000; manter preços, trial, assinaturas e saldos. Auditar limites sem cobrar bolhas como respostas.
+2. Recarga transacional por empresa/assinatura/plano/pagamento confirmado, única por pagamento/ciclo mesmo com notificações diferentes. Preservar reposição sem acúmulo; gravar delta real e histórico. Evento atrasado/plano errado não recarrega; concessão manual não é pagamento.
+3. Reservar atomicamente um crédito por resposta lógica após bloqueios; saldo disponível desconta reservas. Consolidar uma cobrança em sucesso; liberar uma vez em falha conhecida, vazio ou bloqueio. Mídia e tentativas não cobram créditos FLOWA extras.
+4. Registrar partes e confirmação: alguma parte entregue = uma cobrança parcial; todas comprovadamente falhas = zero. Resultado incerto aguarda conciliação, sem reenvio/devolução automática. Verificar confirmação real de entrega da Evolution; aceitação não é entrega.
+5. Separar erro da RPC de saldo zero; revalidar pausas antes de enviar sem mudar seus comandos/regras.
+6. Relatório de empresas afetadas e lacunas antes de correção retroativa; autorização específica, chave única e lançamento compensatório sem apagar histórico.
 
 ### Etapa B — Medição e perfil econômico
 
