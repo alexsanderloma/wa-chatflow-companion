@@ -4,7 +4,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { type ReactNode } from "react";
 import {
   LayoutDashboard, Bot, KanbanSquare, LogOut, Smartphone, Shield,
-  Inbox, Users, BarChart3, Settings, Contact, Zap, MessageCircle, Megaphone, Webhook, Wallet, Truck,
+  Inbox, Users, BarChart3, Settings, Contact, Zap, MessageCircle, Megaphone, Webhook, Wallet, Truck, CreditCard,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { brand, supportWhatsappUrl, supportWhatsappDisplay } from "@/config/brand";
@@ -115,6 +115,12 @@ export function AppShell({
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {isAdmin && (
+            <Link to="/app/checkout" search={{ mode: "upgrade" }} title={plansLabel(company)}
+              className="size-9 grid place-items-center rounded-lg text-muted-foreground hover:text-foreground">
+              <CreditCard className="size-[18px]" />
+            </Link>
+          )}
           <ThemeToggle />
           <Button variant="ghost" size="icon"
             onClick={signOut}
@@ -191,6 +197,7 @@ function Sidebar({
             </div>
           </div>
         ))}
+        {isAdmin && <PlansLink company={company} active={loc.pathname.startsWith("/app/checkout")} />}
       </nav>
 
       <div className="p-3 border-t border-[color:var(--hairline)]">
@@ -225,6 +232,23 @@ function Sidebar({
         </a>
       </div>
     </aside>
+  );
+}
+
+/** Empresa com plano contratado vê "Selecionar plano"; sem plano (trial), "Planos". */
+function plansLabel(company: CompanyRow | null) {
+  return company?.status_cobranca === "ativo" ? "Selecionar plano" : "Planos";
+}
+
+function PlansLink({ company, active }: { company: CompanyRow | null; active: boolean }) {
+  return (
+    <div>
+      <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">Assinatura</div>
+      <Link to="/app/checkout" search={{ mode: "upgrade" }}
+        className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-[12px] font-medium whitespace-nowrap ${active ? "text-foreground bg-[color:var(--panel-2)]" : "text-muted-foreground hover:text-foreground hover:bg-[color:var(--panel-2)]"}`}>
+        <CreditCard className="size-4" /> {plansLabel(company)}
+      </Link>
+    </div>
   );
 }
 

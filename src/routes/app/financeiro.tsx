@@ -72,7 +72,7 @@ function PlanGate({ planSlug }: { planSlug?: string }) {
           <li>✓ Fluxo de caixa, KPIs e categorias</li>
           <li>✓ Lançamentos manuais com PIX/boleto/cartão</li>
         </ul>
-        <Button asChild size="lg"><Link to="/app/checkout">Fazer upgrade</Link></Button>
+        <Button asChild size="lg"><Link to="/app/checkout" search={{ mode: "upgrade" }}>Fazer upgrade</Link></Button>
       </Card>
     </div>
   );

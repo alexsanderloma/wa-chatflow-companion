@@ -26,7 +26,7 @@ export function CreditsBadge() {
 
   return (
     <Link
-      to="/app/checkout"
+      to="/app/checkout" search={{ mode: "upgrade" }}
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-medium ${tone}`}
       title={`${data.saldo} créditos de IA disponíveis (origem: ${data.origem})`}
     >

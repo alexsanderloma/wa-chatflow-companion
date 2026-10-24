@@ -26,7 +26,7 @@ export function PlanUsageBadge({ label, used, limit, className }: Props) {
       {hit && (
         <>
           <AlertTriangle className="size-3.5" />
-          <Link to="/app/checkout" className="underline underline-offset-2 font-semibold">
+          <Link to="/app/checkout" search={{ mode: "upgrade" }} className="underline underline-offset-2 font-semibold">
             Fazer upgrade
           </Link>
         </>
