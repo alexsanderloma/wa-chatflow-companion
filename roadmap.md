@@ -1,5 +1,9 @@
 # FLOWA reference-led presentation replacement
 
+## Complete phone navigation
+- [x] Add a bottom Menu with all existing workspace destinations, subscription, Master and support, preserving desktop role filtering.
+- [ ] Verify authenticated phone navigation and menu dismissal, overflow and automatic compilation; do not publish.
+
 ## Direct Gemini production transport
 - [x] Replace only Gemini chat/media with official Google generateContent and safe server-key handling; preserve public callers and other providers.
 - [x] Offline protocol, transport and regression tests passed; automatic build OK. No secrets or publication; live Google/model availability remains unverified without a configured key or real requests.

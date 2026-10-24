@@ -1,4 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 
 export type MobileNavItem = {
   to: string;
@@ -9,9 +10,11 @@ export type MobileNavItem = {
 export function MobileBottomNav({
   items,
   accent = "var(--brand)",
+  menu,
 }: {
   items: MobileNavItem[];
   accent?: string;
+  menu?: ReactNode;
 }) {
   const loc = useLocation();
   return (
@@ -53,6 +56,7 @@ export function MobileBottomNav({
             </Link>
           );
         })}
+        {menu}
       </div>
     </nav>
   );

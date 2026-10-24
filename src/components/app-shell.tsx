@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { BrandMark } from "@/components/brand-mark";
 import { type ReactNode } from "react";
 import {
   LayoutDashboard, Bot, KanbanSquare, LogOut, Smartphone, Shield,
-  Inbox, Users, BarChart3, Settings, Contact, Zap, MessageCircle, Megaphone, Webhook, Wallet, Truck, CreditCard,
+  Inbox, Users, BarChart3, Settings, Contact, Zap, MessageCircle, Megaphone, Webhook, Wallet, Truck, CreditCard, Menu,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { brand, supportWhatsappUrl, supportWhatsappDisplay } from "@/config/brand";
@@ -87,9 +88,6 @@ export function AppShell({
     { to: "/app/conversas", label: "Conversas", icon: Inbox },
     { to: "/app/crm", label: "CRM", icon: KanbanSquare },
     { to: "/app/contatos", label: "Contatos", icon: Contact },
-    isAdmin
-      ? { to: "/app/agente", label: "Agente", icon: Bot }
-      : { to: "/app/conexao", label: "Conexão", icon: Smartphone },
   ];
 
   return (
@@ -162,7 +160,66 @@ export function AppShell({
         </main>
       </div>
 
-      <MobileBottomNav items={mobileItems} accent={primary} />
+      <MobileBottomNav items={mobileItems} accent={primary} menu={
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" aria-label="Abrir menu completo" className="relative h-auto flex-1 flex-col gap-0.5 rounded-lg px-0 py-1.5 text-[10.5px] font-medium text-muted-foreground [&_svg]:size-[22px]">
+              <Menu strokeWidth={1.9} />
+              <span>Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto rounded-t-lg px-4 pt-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <SheetHeader className="text-left mb-5">
+              <SheetTitle>Menu</SheetTitle>
+              <SheetDescription>{brand.name} · {company?.nome || "Sua empresa"}</SheetDescription>
+            </SheetHeader>
+            <nav aria-label="Menu completo" className="space-y-5">
+              {sections.map((section) => (
+                <div key={section.label}>
+                  <div className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">{section.label}</div>
+                  <div className="grid grid-cols-2 gap-1">
+                    {section.items.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+                      const Icon = item.icon;
+                      const active = loc.pathname.startsWith(item.to);
+                      return (
+                        <SheetClose asChild key={item.to}>
+                          <Link to={item.to} aria-current={active ? "page" : undefined}
+                            className={`flex min-h-12 min-w-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${active ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-accent"}`}>
+                            <Icon className="size-5 shrink-0" />
+                            <span className="min-w-0 break-words">{item.label}</span>
+                          </Link>
+                        </SheetClose>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {isAdmin && (
+                <div>
+                  <div className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">Assinatura</div>
+                  <SheetClose asChild>
+                    <Link to="/app/checkout" search={{ mode: "upgrade" }} className="flex min-h-12 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">
+                      <CreditCard className="size-5 shrink-0" />{plansLabel(company)}
+                    </Link>
+                  </SheetClose>
+                </div>
+              )}
+              {isSuperAdmin && (
+                <SheetClose asChild>
+                  <Link to="/master/painel" className="flex min-h-12 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-accent">
+                    <Shield className="size-5" />Painel Master
+                  </Link>
+                </SheetClose>
+              )}
+              <SheetClose asChild>
+                <a href={supportWhatsappUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+                  <MessageCircle className="size-5" />Suporte
+                </a>
+              </SheetClose>
+            </nav>
+          </SheetContent>
+        </Sheet>
+      } />
     </div>
   );
 }
