@@ -1,5 +1,7 @@
 # AGENTS.md
 
+- Workspace mobile navigation keeps four quick links plus a complete sheet menu derived from the desktop sections, preserving the same role filters so destinations cannot disappear on phones.
+
 - Gemini chat and WhatsApp media share the server-only Google generateContent transport; credentials are read at request time and errors never expose provider bodies, while OpenAI/Anthropic retain their tenant-key transports.
 
 - Checkout upgrade is explicit and support-only until provider updates and entitlement reconciliation are implemented together; ordinary payment reuses only matching-plan Asaas subscriptions, and durable subscription reservation blocks concurrent/uncertain duplicate creation.
