@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Power, QrCode, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, RefreshCw, Power, QrCode, Trash2, Smartphone } from "lucide-react";
 import { brand } from "@/config/brand";
 import { connectWhatsapp, checkWhatsappStatus, disconnectWhatsapp, diagnoseWhatsapp, removeWhatsappConnection } from "@/lib/evolution.functions";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
@@ -38,6 +39,9 @@ function ConexaoPage() {
 
   const [loading, setLoading] = useState(false);
   const [qr, setQr] = useState<string | null>(null);
+  const [pairCode, setPairCode] = useState<string | null>(null);
+  const [phoneMode, setPhoneMode] = useState(false);
+  const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<ConnectionStatus>("unknown");
   const [checking, setChecking] = useState(false);
   const [pending, setPending] = useState(false);
@@ -78,7 +82,7 @@ function ConexaoPage() {
       setStatus(next);
       setNumero(r.numero ?? null);
       const view = pairingView(next, null);
-      if (next !== "connecting") setQr(view.qr);
+      if (next !== "connecting") { setQr(view.qr); setPairCode(null); }
       if (view.poll) startPolling(); else stopPolling();
       if (r.state === null && next !== "disconnected") {
         setDiag("Não foi possível confirmar o estado agora. Mantivemos o último status conhecido; tente atualizar novamente.");
@@ -93,13 +97,15 @@ function ConexaoPage() {
     } finally { checkBusy.current = false; if (mounted.current) setChecking(false); }
   }
 
-  async function doConnect() {
+  async function doConnect(byPhone = false) {
     if (actionBusy.current) return;
+    const digits = phone.replace(/\D/g, "");
+    if (byPhone && (digits.length < 10 || digits.length > 15)) { toast.error("Informe o número com DDI e DDD, ex.: 55 31 99999-8888."); return; }
     actionBusy.current = true;
     stopPolling(); requests.current.next();
-    setLoading(true); setQr(null); setProblem(null); setDiag(null);
+    setLoading(true); setQr(null); setPairCode(null); setProblem(null); setDiag(null);
     try {
-      const operation = connect();
+      const operation = connect({ data: byPhone ? { numero: digits } : {} });
       void operation.finally(() => { actionBusy.current = false; if (mounted.current) setPending(false); }).catch(() => {});
       const r = await withTimeout(operation, 90_000);
       if (!mounted.current) return;
@@ -107,7 +113,10 @@ function ConexaoPage() {
       if (r.diagnostic === "conectada") {
         setStatus("connected"); stopPolling(); toast.success("Já está conectado!");
         void doCheck(true);
-      } else if (r.qrBase64) {
+      } else if (byPhone && r.pairingCode) {
+        setPairCode(r.pairingCode); setStatus("connecting"); startPolling();
+        toast.message("Código gerado. Digite-o no WhatsApp do celular.");
+      } else if (!byPhone && r.qrBase64) {
         setQr(r.qrBase64); setStatus("connecting"); startPolling();
         toast.message("QR Code gerado. Escaneie no WhatsApp.");
       } else {
@@ -192,7 +201,7 @@ function ConexaoPage() {
                 <Power className="size-4 mr-1.5" /> Desconectar
               </Button>
             ) : (
-              <Button size="sm" onClick={doConnect} disabled={loading || pending || checking}>
+              <Button size="sm" onClick={() => doConnect(false)} disabled={loading || pending || checking}>
                 {loading ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <QrCode className="size-4 mr-1.5" />}
                 {qr ? "Gerar novo QR" : "Conectar WhatsApp"}
               </Button>
@@ -200,7 +209,46 @@ function ConexaoPage() {
           </div>
         </div>
 
-        {qr ? (
+        {status !== "connected" && !qr && !pairCode && (
+          <div className="mb-5 rounded-lg border border-border p-4 space-y-3">
+            {phoneMode ? (
+              <>
+                <label htmlFor="pair-phone" className="text-sm font-medium">Número do WhatsApp (com DDI e DDD)</label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input id="pair-phone" inputMode="tel" placeholder="55 31 99999-8888" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <Button onClick={() => doConnect(true)} disabled={loading || pending || checking}>
+                    {loading ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Smartphone className="size-4 mr-1.5" />}Gerar código
+                  </Button>
+                </div>
+                <button type="button" className="text-xs underline text-muted-foreground" onClick={() => setPhoneMode(false)}>Prefiro escanear o QR Code</button>
+              </>
+            ) : (
+              <button type="button" className="text-sm underline text-muted-foreground hover:text-foreground" onClick={() => setPhoneMode(true)}>Conectar com número de telefone</button>
+            )}
+          </div>
+        )}
+
+        {pairCode ? (
+          <div className="grid md:grid-cols-2 gap-6 items-center">
+            <div className="mx-auto text-center">
+              <p className="text-xs text-muted-foreground mb-2">Seu código de conexão</p>
+              <div className="font-mono text-3xl font-bold tracking-[0.25em] rounded-lg border border-border px-5 py-4 select-all">
+                {pairCode.length === 8 ? `${pairCode.slice(0, 4)}-${pairCode.slice(4)}` : pairCode}
+              </div>
+            </div>
+            <div className="space-y-3 text-sm">
+              <h3 className="font-semibold text-base">Como usar o código</h3>
+              <ol className="list-decimal pl-5 space-y-1.5 text-muted-foreground">
+                <li>Abra o WhatsApp no celular.</li>
+                <li>Toque em <b>Aparelhos conectados</b> → <b>Conectar um aparelho</b>.</li>
+                <li>Toque em <b>Conectar com número de telefone</b>.</li>
+                <li>Digite o código ao lado.</li>
+              </ol>
+              <Button size="sm" variant="outline" onClick={() => { setPairCode(null); stopPolling(); }}>Gerar outro código</Button>
+              <p className="text-xs text-muted-foreground">Verificando a cada 5 s.</p>
+            </div>
+          </div>
+        ) : qr ? (
           <div className="grid md:grid-cols-2 gap-6 items-center">
             <div className="p-2 rounded-lg border border-border w-fit max-w-full mx-auto">
               <img src={qr} alt="QR Code WhatsApp" className="w-72 max-w-full aspect-square object-contain" />
@@ -222,7 +270,7 @@ function ConexaoPage() {
           <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm space-y-3">
             <p>{problem}</p>
             <div className="flex flex-wrap gap-2">
-               <Button size="sm" onClick={doConnect} disabled={loading || pending}><RefreshCw className="size-4 mr-1.5" />Tentar novamente</Button>
+               <Button size="sm" onClick={() => doConnect(phoneMode)} disabled={loading || pending}><RefreshCw className="size-4 mr-1.5" />Tentar novamente</Button>
                <Button size="sm" variant="outline" onClick={doDiagnose} disabled={loading || pending}>Diagnosticar</Button>
             </div>
           </div>

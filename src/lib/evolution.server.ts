@@ -74,9 +74,10 @@ export async function evoCreateInstance(instanceName: string, webhookUrl?: strin
   return evo(`/instance/create`, { method: "POST", json: body, signal: AbortSignal.timeout(20_000) });
 }
 
-export async function evoConnect(instanceName: string): Promise<any> {
-  // GET /instance/connect/{instance} → { base64, code, pairingCode } (só usar no clique "Conectar").
-  return withEvoRetry(() => evo(`/instance/connect/${encodeURIComponent(instanceName)}`, { method: "GET" }));
+export async function evoConnect(instanceName: string, number?: string): Promise<any> {
+  // GET /instance/connect/{instance}[?number=] → { base64, code, pairingCode } (só usar no clique "Conectar").
+  const q = number ? `?number=${encodeURIComponent(number)}` : "";
+  return withEvoRetry(() => evo(`/instance/connect/${encodeURIComponent(instanceName)}${q}`, { method: "GET" }));
 }
 
 /** Reinicia a instância (não apaga dados) — usado só quando connect não devolve QR. */
@@ -94,8 +95,8 @@ export async function qrFromPayload(payload: any): Promise<{ qrBase64: string | 
   return { qrBase64: null, code: null, pairingCode };
 }
 
-export async function evoGetQr(instanceName: string) {
-  return qrFromPayload(await evoConnect(instanceName));
+export async function evoGetQr(instanceName: string, number?: string) {
+  return qrFromPayload(await evoConnect(instanceName, number));
 }
 
 export async function evoState(instanceName: string): Promise<{ instance?: { state?: string }; state?: string }> {

@@ -43,7 +43,13 @@ type ConnectResult = {
 
 export const connectWhatsapp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<ConnectResult> => {
+  .inputValidator((d: { numero?: string } | undefined) => {
+    const numero = (d?.numero ?? "").replace(/\D/g, "");
+    if (d?.numero !== undefined && (numero.length < 10 || numero.length > 15)) throw new Error("Informe o número com DDI e DDD, ex.: 5531999998888.");
+    return { numero: numero || undefined };
+  })
+  .handler(async ({ context, data }): Promise<ConnectResult> => {
+    const pairNumber = data?.numero;
     const { supabase, userId } = context;
     const companyId = await resolveCompanyId(supabase, userId);
     const { evoCreateInstance, evoGetQr, evoSetWebhook, evoState, evoRestart, qrFromPayload } = await import("./evolution.server");
@@ -114,10 +120,13 @@ export const connectWhatsapp = createServerFn({ method: "POST" })
 
     // 2) connect para obter QR (somente aqui, nunca no polling).
     let lastErr: unknown = null;
-    for (let i = 0; i < 4 && !qr.qrBase64; i++) {
+    // Pareamento por número: o código vem apenas do connect com ?number=.
+    const ready = () => (pairNumber ? !!qr.pairingCode : !!qr.qrBase64);
+    if (pairNumber) qr = { qrBase64: null, code: null, pairingCode: null };
+    for (let i = 0; i < 4 && !ready(); i++) {
       try {
-        qr = await evoGetQr(instanceName);
-        if (qr.qrBase64) break;
+        qr = await evoGetQr(instanceName, pairNumber);
+        if (ready()) break;
         if (i === 1) {
           // Instância desconectada travada sem QR: reinicia (não apaga dados).
           try { await evoRestart(instanceName); } catch (e) { console.warn("[evolution.restart]", (e as Error)?.message); }
@@ -129,7 +138,7 @@ export const connectWhatsapp = createServerFn({ method: "POST" })
     let state: string | null = null;
     try { state = parseEvoState(await evoState(instanceName)); } catch {}
     if (state === "open") return fail("conectada", "open");
-    if (!qr.qrBase64) return fail(lastErr ? diagnosticFromError(lastErr) : "qr_indisponivel", state);
+    if (!ready()) return fail(lastErr ? diagnosticFromError(lastErr) : "qr_indisponivel", state);
     return { instanceName, ...qr, state, diagnostic: "conectando", message: DIAGNOSTIC_MESSAGES.conectando };
   });
 
