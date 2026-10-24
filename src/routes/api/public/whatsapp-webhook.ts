@@ -261,16 +261,21 @@ export const Route = createFileRoute("/api/public/whatsapp-webhook")({
             return new Response("superseded", { status: 200 });
           }
 
-          const { data: humanRecent } = await supabaseAdmin
+          const { data: humanRecentRows } = await supabaseAdmin
             .from("mensagens")
-            .select("id, created_at, autor")
+            .select("id, created_at, autor, texto")
             .eq("company_id", companyId)
             .eq("numero", number)
             .eq("direcao", "saida")
             .eq("autor", "humano")
             .gte("created_at", new Date(Date.now() - 90_000).toISOString())
-            .limit(1);
-          if (humanRecent && humanRecent.length > 0) {
+            .limit(10);
+          // Pause/unpause commands are control messages, not a human conversation.
+          const humanRecent = (humanRecentRows ?? []).filter((m: any) => {
+            const t = String(m.texto ?? "").toLowerCase().trim();
+            return t !== palavraPausar && t !== palavraDespausar;
+          });
+          if (humanRecent.length > 0) {
             await upsertCard(supabaseAdmin, companyId, userId, number, pushName, text, stages);
             return new Response("human-active", { status: 200 });
           }
