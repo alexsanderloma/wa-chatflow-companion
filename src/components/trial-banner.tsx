@@ -17,7 +17,7 @@ export function TrialBanner({ company }: { company: CompanyRow }) {
         )}
       </span>
       <Link
-        to="/app/checkout"
+        to="/app/checkout" search={days > 0 ? { mode: "upgrade" } : {}}
         className="ml-2 inline-flex items-center rounded-md bg-white/15 hover:bg-white/25 px-2.5 py-0.5 text-xs font-semibold ring-1 ring-white/30"
       >
         Ativar plano
