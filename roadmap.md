@@ -2,7 +2,7 @@
 
 ## Complete phone navigation
 - [x] Add a bottom Menu with all existing workspace destinations, subscription, Master and support, preserving desktop role filtering.
-- [ ] Verify authenticated phone navigation and menu dismissal, overflow and automatic compilation; do not publish.
+- [x] Verified authenticated Eletro Gold phone menu, navigation to Fornecedores and Conexão, dismissal and no horizontal overflow/runtime errors; automatic build OK. Not published.
 
 ## Direct Gemini production transport
 - [x] Replace only Gemini chat/media with official Google generateContent and safe server-key handling; preserve public callers and other providers.
