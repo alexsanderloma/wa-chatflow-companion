@@ -2325,6 +2325,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_paid_credit_event: { Args: { _event: Json }; Returns: Json }
       claim_human_escalation: {
         Args: {
           _company_id: string
