@@ -1,5 +1,9 @@
 # FLOWA reference-led presentation replacement
 
+## Automatic reply production failure
+- [ ] Diagnose the latest unanswered message and verify the actual Google response and WhatsApp send path.
+- [ ] Correct the confirmed failure, run regression tests and verify a real reply before reporting success.
+
 ## Complete phone navigation
 - [x] Add a bottom Menu with all existing workspace destinations, subscription, Master and support, preserving desktop role filtering.
 - [x] Verified authenticated Eletro Gold phone menu, navigation to Fornecedores and Conexão, dismissal and no horizontal overflow/runtime errors; automatic build OK. Not published.
