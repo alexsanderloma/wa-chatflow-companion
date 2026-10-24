@@ -246,7 +246,7 @@ function AgentePage() {
                   </Select>
                   <p className="text-xs text-muted-foreground">
                     Gemini é o padrão e já vem incluso. {(!allowOpenAI || !allowAnthropic) && (
-                      <>GPT e Claude exigem o plano Pro. <Link to="/app/checkout" className="underline">Fazer upgrade</Link>.</>
+                      <>GPT e Claude exigem o plano Pro. <Link to="/app/checkout" search={{ mode: "upgrade" }} className="underline">Fazer upgrade</Link>.</>
                     )}
                   </p>
                 </div>
@@ -525,7 +525,7 @@ function AgentePage() {
                       <p className="text-xs text-muted-foreground mt-1">Permite que a IA marque eventos automaticamente.</p>
                     </div>
                     {!allowGoogleCal ? (
-                      <Link to="/app/checkout" className="text-xs underline text-muted-foreground">Disponível no Pro</Link>
+                      <Link to="/app/checkout" search={{ mode: "upgrade" }} className="text-xs underline text-muted-foreground">Disponível no Pro</Link>
                     ) : google?.conectado
                       ? <Button size="sm" variant="outline" onClick={disconnectG}>Desconectar</Button>
                       : <Button size="sm" onClick={connectGoogle}><LinkIcon className="size-3.5 mr-1" />Conectar</Button>}
