@@ -8,27 +8,31 @@ test("assign requires valid company and plan UUIDs; cancel never accepts a plan"
   assert.throws(() => validateMasterPlanInput({ companyId: "invalid", planId, action: "assign" }));
   assert.throws(() => validateMasterPlanInput({ companyId, action: "assign" }));
   assert.throws(() => validateMasterPlanInput({ companyId, planId: "invalid", action: "assign" }));
-  assert.deepEqual(validateMasterPlanInput({ companyId, planId, action: "assign" }), { companyId, planId, action: "assign" });
+  assert.throws(() => validateMasterPlanInput({ companyId, planId, action: "assign" }));
+  assert.throws(() => validateMasterPlanInput({ companyId, planId, action: "assign", period: "trial_365" }));
+  assert.deepEqual(validateMasterPlanInput({ companyId, planId, action: "assign", period: "trial_7" }), { companyId, planId, action: "assign", period: "trial_7" });
   assert.equal(validateMasterPlanInput({ companyId, planId, action: "cancel" }).planId, null);
 });
-test("manual assignment is active with a clamped calendar month", () => {
-  const result = masterPlanDecision({ status_cobranca: "ativo", trial_ate: "2026-01-01T00:00:00.000Z" }, "assign", new Date("2026-01-31T12:00:00.000Z"));
-  assert.deepEqual(result, { status: "active", companyStatus: "ativo", periodEnd: "2026-02-28T12:00:00.000Z", trialEndsAt: null, canceledAt: null });
+test("temporary access is active for exactly 30 days, without trial", () => {
+  const result = masterPlanDecision("temporary_30", "assign", new Date("2026-01-31T12:00:00.000Z"));
+  assert.deepEqual(result, { status: "active", companyStatus: "ativo", periodEnd: "2026-03-02T12:00:00.000Z", trialEndsAt: null, canceledAt: null });
 });
-test("only a real unexpired company trial is preserved, not renewed", () => {
+test("Master trial is exactly 7 days, with trialing status", () => {
   const now = new Date("2026-10-23T12:00:00.000Z");
-  const trial = { status_cobranca: "trial", trial_ate: "2026-10-25T12:00:00.000Z" };
-  const result = masterPlanDecision(trial, "assign", now);
-  assert.equal(result.status, "active");
+  const result = masterPlanDecision("trial_7", "assign", now);
+  assert.equal(result.status, "trialing");
   assert.equal(result.companyStatus, "trial");
-  assert.equal(result.trialEndsAt, trial.trial_ate);
-  assert.equal(result.periodEnd, trial.trial_ate);
-  assert.equal(masterPlanDecision({ ...trial, status_cobranca: "suspenso" }, "assign", now).trialEndsAt, null);
-  assert.equal(masterPlanDecision({ ...trial, trial_ate: now.toISOString() }, "assign", now).companyStatus, "ativo");
+  assert.equal(result.trialEndsAt, "2026-10-30T12:00:00.000Z");
+  assert.equal(result.periodEnd, "2026-10-30T12:00:00.000Z");
+});
+test("permanent Master access is active with no expiry or trial", () => {
+  assert.deepEqual(masterPlanDecision("permanent", "assign", new Date("2026-10-23T12:00:00.000Z")), {
+    status: "active", companyStatus: "ativo", periodEnd: null, trialEndsAt: null, canceledAt: null,
+  });
 });
 test("removal ends entitlement immediately and canceled history is nonoperational", () => {
   const now = new Date("2026-10-23T12:00:00.000Z");
-  assert.deepEqual(masterPlanDecision({ status_cobranca: "trial", trial_ate: "2026-11-01T00:00:00.000Z" }, "cancel", now), {
+  assert.deepEqual(masterPlanDecision(null, "cancel", now), {
     status: "canceled", companyStatus: "suspenso", periodEnd: now.toISOString(), trialEndsAt: null, canceledAt: now.toISOString(),
   });
   assert.deepEqual([...OPERATIONAL_SUBSCRIPTION_STATUSES], ["trialing", "active", "past_due", "incomplete", "paused"]);
