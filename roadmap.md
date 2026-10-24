@@ -1,5 +1,10 @@
 # FLOWA reference-led presentation replacement
 
+## Production connection removal and Master periods
+- [ ] Add authenticated disconnected-line removal with remote best effort, local deletion and usage refresh; distinguish missing instance from transient errors.
+- [ ] Read actual plan instance limits and replace manual trial extension with required 7-day trial, 30-day temporary or permanent Master period; preserve audit/history.
+- [ ] Run focused tests and verify flows; report changed files without publication.
+
 ## Connection tab repair
 - [x] Fix stale status races, pairing lifecycle, loading and visible errors without changing Evolution or data.
 - [x] 10 focused tests passed; automatic build OK. Verified authenticated rendering and Atualizar; onboarding bypassed only in browser response for inspection. No real pairing/disconnect attempted; actual QR delivery remains unverified. No publish.
