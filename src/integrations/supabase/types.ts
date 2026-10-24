@@ -260,6 +260,251 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_access_state: {
+        Row: {
+          model: string
+          paused: boolean
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          model: string
+          paused?: boolean
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          model?: string
+          paused?: boolean
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_fin_expense: {
+        Row: {
+          amount_cents: number
+          company_id: string | null
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          incurred_on: string
+        }
+        Insert: {
+          amount_cents?: number
+          company_id?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          incurred_on?: string
+        }
+        Update: {
+          amount_cents?: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          incurred_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_fin_expense_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_fin_settings: {
+        Row: {
+          created_at: string
+          created_by: string
+          credit_brl: number | null
+          id: string
+          multiplier: number
+          safety_pct: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          credit_brl?: number | null
+          id?: string
+          multiplier?: number
+          safety_pct?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          credit_brl?: number | null
+          id?: string
+          multiplier?: number
+          safety_pct?: number
+        }
+        Relationships: []
+      }
+      ai_response_charge: {
+        Row: {
+          company_id: string
+          created_at: string
+          delivered_parts: number
+          id: string
+          source_message_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          delivered_parts?: number
+          id?: string
+          source_message_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          delivered_parts?: number
+          id?: string
+          source_message_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_response_charge_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_response_charge_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "mensagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_response_part: {
+        Row: {
+          charge_id: string
+          company_id: string
+          created_at: string
+          id: string
+          part_index: number
+          status: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          charge_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          part_index: number
+          status?: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          charge_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          part_index?: number
+          status?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_response_part_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "ai_response_charge"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_response_part_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_usage: {
+        Row: {
+          charge_id: string | null
+          company_id: string | null
+          confirmed_credits: number | null
+          created_at: string
+          estimated_credits: number | null
+          gateway_run_id: string | null
+          id: string
+          input_tokens: number | null
+          model: string
+          output_tokens: number | null
+          plan_slug: string | null
+          provider: string
+          purpose: string
+          rate_version: string | null
+          status: string
+        }
+        Insert: {
+          charge_id?: string | null
+          company_id?: string | null
+          confirmed_credits?: number | null
+          created_at?: string
+          estimated_credits?: number | null
+          gateway_run_id?: string | null
+          id?: string
+          input_tokens?: number | null
+          model: string
+          output_tokens?: number | null
+          plan_slug?: string | null
+          provider: string
+          purpose?: string
+          rate_version?: string | null
+          status: string
+        }
+        Update: {
+          charge_id?: string | null
+          company_id?: string | null
+          confirmed_credits?: number | null
+          created_at?: string
+          estimated_credits?: number | null
+          gateway_run_id?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string
+          output_tokens?: number | null
+          plan_slug?: string | null
+          provider?: string
+          purpose?: string
+          rate_version?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "ai_response_charge"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_token: {
         Row: {
           company_id: string
@@ -412,6 +657,64 @@ export type Database = {
             columns: ["matched_company_id"]
             isOneToOne: false
             referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_payment_credit: {
+        Row: {
+          amount_cents: number | null
+          company_id: string
+          created_at: string
+          event_type: string
+          id: string
+          payment_key: string
+          period_end: string | null
+          plan_id: string
+          subscription_id: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          company_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          payment_key: string
+          period_end?: string | null
+          plan_id: string
+          subscription_id: string
+        }
+        Update: {
+          amount_cents?: number | null
+          company_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          payment_key?: string
+          period_end?: string | null
+          plan_id?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_payment_credit_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_payment_credit_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_payment_credit_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscription"
             referencedColumns: ["id"]
           },
         ]
@@ -2037,6 +2340,10 @@ export type Database = {
         Returns: string
       }
       claim_super_admin_if_empty: { Args: never; Returns: undefined }
+      confirm_ai_delivery: {
+        Args: { _company_id: string; _status: string; _whatsapp_id: string }
+        Returns: boolean
+      }
       consume_ai_credit: {
         Args: { _company_id: string; _ref?: string }
         Returns: boolean
@@ -2059,6 +2366,10 @@ export type Database = {
       fin_enable_for_company: {
         Args: { _company_id: string; _enable: boolean }
         Returns: undefined
+      }
+      finish_ai_response: {
+        Args: { _id: string; _outcome: string }
+        Returns: string
       }
       grant_credits: {
         Args: { _company_id: string; _motivo?: string; _qtd: number }
@@ -2090,6 +2401,10 @@ export type Database = {
             }
             Returns: Json
           }
+      reserve_ai_response: {
+        Args: { _company_id: string; _source_id: string }
+        Returns: Json
+      }
       seed_fin_categorias: { Args: { _company_id: string }; Returns: undefined }
       topup_plan_credits: {
         Args: { _company_id: string; _plan_slug: string }

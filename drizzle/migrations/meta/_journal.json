@@ -50,6 +50,13 @@
       "when": 1792804889326,
       "tag": "0006_master_explicit_access_periods",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792860509722,
+      "tag": "0007_ai_accounting_reservations_and_master_finance",
+      "breakpoints": true
     }
   ]
 }
