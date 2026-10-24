@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { brand } from "@/config/brand";
-import { Shield, LogOut, BarChart3, Building2, Plus, Settings, ArrowLeft, Package, CreditCard } from "lucide-react";
+import { Shield, LogOut, BarChart3, Building2, Plus, Settings, ArrowLeft, Package, CreditCard, Wallet, Menu } from "lucide-react";
+import { Sheet, SheetTrigger, SheetContent, SheetTitle, SheetHeader } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileBottomNav, type MobileNavItem } from "@/components/mobile-bottom-nav";
 import { OWNER_USER_ID } from "@/lib/apresentacao.shared";
@@ -34,6 +36,7 @@ const sections = [
       { to: "/master/painel", label: "Painel", icon: BarChart3 },
       { to: "/master/empresas", label: "Empresas", icon: Building2 },
       { to: "/master/assinaturas", label: "Assinaturas", icon: CreditCard },
+      { to: '/master/financeiro-ia', label: 'Finanças da IA', icon: Wallet },
     ],
   },
   {
@@ -232,7 +235,7 @@ function MasterLayout() {
         </main>
       </div>
 
-      <MobileBottomNav items={mobileItems} accent={RED} />
+      <MobileBottomNav items={mobileItems} accent={RED} menu={<Sheet><SheetTrigger asChild><Button variant="ghost" className="flex-1 h-auto flex-col gap-0.5 py-1.5 text-xs" aria-label="Menu completo"><Menu className="size-5"/>Menu</Button></SheetTrigger><SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto"><SheetHeader><SheetTitle>Master</SheetTitle></SheetHeader><div className="grid grid-cols-2 gap-2 py-4">{sections.flatMap(section=>section.items).map(item=><Link key={item.to} to={item.to} className="flex items-center gap-2 p-3 border rounded-md text-sm"><item.icon className="size-4"/>{item.label}</Link>)}</div></SheetContent></Sheet>} />
       </div>
     </div>
   );
