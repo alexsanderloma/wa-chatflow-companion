@@ -1,9 +1,9 @@
 # FLOWA reference-led presentation replacement
 
 ## Account identity and Starter-only trial
-- [ ] Distinguish tenant account responsibility from FLOWA platform ownership in the workspace identity.
-- [ ] Restrict new free trials to Starter and separate paid purchase from trial entitlement; validate payment guards without creating real charges.
-- [ ] Run focused tests and authenticated browser checks; do not publish.
+- [x] Workspace now distinguishes FLOWA branding, tenant account name and account responsibility, without changing roles.
+- [x] Atomic new Starter provisioning, locked trial selection, separate immediate paid purchase and shared entitlement gating; protected company/subscription billing fields against tenant writes. Existing rows/history/balances preserved.
+- [x] 36 focused tests passed, automatic build OK, authenticated trial lock/purchase selection/return verified at desktop and supplied width without runtime errors. No real payment/charge or new signup submitted; those mutation paths remain unverified. Not published; database protection already applied.
 
 ## Windows desktop application
 - [x] Create an isolated secure desktop wrapper for the published site, preserving web login and online functionality without changing billing or the site.
