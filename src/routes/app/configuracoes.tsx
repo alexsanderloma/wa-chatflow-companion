@@ -430,7 +430,7 @@ function PlanoCard({ company, sub }: { company: any; sub: any }) {
             <Badge variant="destructive">Inativo</Badge>
           )}
         </div>
-        {sub?.plan ? (
+        {isTrial && !company?.master_access_until ? <div className="text-2xl font-bold">Starter · teste gratuito</div> : sub?.plan ? (
           <>
             <div className="text-2xl font-bold">{sub.plan.nome}</div>
             <div className="text-sm text-muted-foreground">
@@ -471,9 +471,9 @@ function PlanoCard({ company, sub }: { company: any; sub: any }) {
         )}
         <div className="flex flex-wrap gap-2 pt-1">
           <Button asChild>
-            <Link to="/app/checkout" search={planChangeSearch(sub?.plan, company?.selected_plan_slug, isActive || (isTrial && !isExpired))}>
+            <Link to="/app/checkout" search={isTrial ? { mode: "purchase", plano: "starter" } : planChangeSearch(sub?.plan, company?.selected_plan_slug, isActive)}>
               <CreditCard className="size-4 mr-1.5" />
-              {isActive || (isTrial && !isExpired) ? "Trocar de plano" : "Cadastrar cartão e ativar"}
+              {isActive ? "Trocar de plano" : "Contratar plano pago"}
             </Link>
           </Button>
         </div>

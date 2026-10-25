@@ -77,8 +77,8 @@ export function AppShell({
   const primary = "var(--brand)";
   const isAdmin = membership?.role === "owner" || membership?.role === "admin";
   const roleLabel =
-    membership?.role === "owner" ? "Dono"
-    : membership?.role === "admin" ? "Admin"
+    membership?.role === "owner" ? "Responsável da conta"
+    : membership?.role === "admin" ? "Administrador da conta"
     : membership?.role === "atendente" ? "Atendente"
     : "Membro";
   const userName = (email || "Você").split("@")[0];
@@ -102,14 +102,10 @@ export function AppShell({
       {/* Mobile top bar */}
       <header className="md:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 py-3 bg-[color:var(--panel)]/80 backdrop-blur-xl border-b border-[color:var(--hairline)]">
         <div className="flex items-center gap-2.5 min-w-0">
-          {company?.logo_url ? (
-            <img src={company.logo_url} alt={company.nome} className="size-8 rounded-lg object-cover ring-1 ring-[color:var(--hairline)]" />
-          ) : (
-            <BrandMark className="size-8" />
-          )}
+          <BrandMark className="size-8" />
           <div className="min-w-0">
             <div className="font-display font-bold tracking-normal text-[14.5px] leading-none truncate">{brand.name}</div>
-            <div className="text-[10.5px] text-muted-foreground truncate mt-0.5">{company?.nome || "Sua empresa"}</div>
+            <div className="text-[10.5px] text-muted-foreground truncate mt-0.5">{company ? `Conta: ${company.nome}` : "Conta em configuração"}</div>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -230,14 +226,10 @@ function Sidebar({
   return (
     <aside className="workspace-sidebar hidden md:flex w-[214px] shrink-0 min-h-screen border-r border-[color:var(--hairline)] bg-[color:var(--sidebar-bg)] flex-col">
       <div className="px-4 py-5 flex items-center gap-2.5 border-b border-[color:var(--hairline)]">
-        {company?.logo_url ? (
-          <img src={company.logo_url} alt={company.nome} className="size-10 rounded-xl object-cover ring-1 ring-[color:var(--hairline)]" />
-        ) : (
-          <BrandMark className="size-10" />
-        )}
+        <BrandMark className="size-10" />
         <div className="min-w-0">
           <div className="font-display font-medium tracking-normal truncate text-[16px]">{brand.name}</div>
-          <div className="text-[11.5px] text-muted-foreground truncate -mt-0.5">{company?.nome || "Sua empresa"}</div>
+          <div className="text-[11.5px] text-muted-foreground truncate -mt-0.5" title={company?.nome}>{company ? `Conta: ${company.nome}` : "Conta em configuração"}</div>
         </div>
       </div>
 

@@ -13,7 +13,7 @@ import {
 import { createCheckoutCompany, startAsaasCheckout } from "@/lib/checkout.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { trialDaysLeft } from "@/lib/tenant";
-import { checkoutRedirect, CHECKOUT_SUPPORT_MESSAGE, CHECKOUT_CURRENT_STATUSES } from "@/lib/checkout-policy";
+import { checkoutRedirect, checkoutInitialPlan, checkoutCanSelect, CHECKOUT_SUPPORT_MESSAGE, CHECKOUT_CURRENT_STATUSES } from "@/lib/checkout-policy";
 
 type Search = { plano?: string; mode?: string };
 
@@ -84,12 +84,14 @@ function CheckoutPage() {
   const ctx = Route.useRouteContext();
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const upgradeMode = search.mode === "upgrade";
+  const upgradeMode = search.mode === "upgrade" && ctx.company?.status_cobranca === "ativo";
+  const purchaseMode = search.mode === "purchase" && !!ctx.company;
+  const canSelect = checkoutCanSelect(ctx.company, search.mode);
   const createCompany = useServerFn(createCheckoutCompany);
   const startCheckout = useServerFn(startAsaasCheckout);
 
   const [plans, setPlans] = useState<Plano[]>([]);
-  const [selected, setSelected] = useState<string | null>(search.plano ?? null);
+  const [selected, setSelected] = useState<string | null>(checkoutInitialPlan(ctx.company, search.mode, search.plano));
   const [creating, setCreating] = useState(false);
   const [paying, setPaying] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
@@ -104,6 +106,7 @@ function CheckoutPage() {
   const trialActive =
     !!ctx.company && ctx.company.status_cobranca === "trial" && trialDaysLeft(ctx.company.trial_ate) > 0;
   const paywallMode = hasCompany && !trialActive && ctx.company?.status_cobranca !== "ativo";
+  const trialLocked = !hasCompany || (trialActive && !purchaseMode);
 
   // Empresa ativa ou em trial ainda válido → não deveria estar aqui
   useEffect(() => {
@@ -127,15 +130,15 @@ function CheckoutPage() {
         const list = data as Plano[];
         setPlans(list);
         // Padrão: Starter (único com trial grátis). Nunca pré-selecionar o plano em destaque.
-        const initial =
-          search.plano ||
-          ctx.company?.selected_plan_slug ||
-          list.find((p) => p.slug === "starter")?.slug ||
-          list[0].slug;
+        const initial = checkoutInitialPlan(ctx.company, search.mode, search.plano);
         if (!selected || !list.find((p) => p.slug === selected)) setSelected(initial);
       }
     });
   }, []);
+
+  useEffect(() => {
+    setSelected(checkoutInitialPlan(ctx.company, search.mode, search.plano));
+  }, [ctx.company?.id, ctx.company?.status_cobranca, search.mode, search.plano]);
 
   // Polling em modo paywall: assim que webhook ativar, libera
   useEffect(() => {
@@ -147,7 +150,10 @@ function CheckoutPage() {
         .select("id, status_cobranca, onboarding_completed")
         .eq("id", id)
         .maybeSingle();
-      if (comp?.status_cobranca === "ativo") {
+      const { data: confirmed } = await supabase.from("subscription").select("id")
+        .eq("company_id", id).eq("status", "active").eq("plan_id", plano?.id ?? "")
+        .eq("provider", "asaas").limit(1).maybeSingle();
+      if (comp?.status_cobranca === "ativo" && confirmed) {
         clearInterval(interval);
         toast.success("Pagamento confirmado! Liberando seu acesso…");
         setTimeout(() => {
@@ -156,7 +162,7 @@ function CheckoutPage() {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [waiting, ctx.company]);
+  }, [waiting, ctx.company, selected, plans]);
 
   const plano = useMemo(() => plans.find((p) => p.slug === selected), [plans, selected]);
 
@@ -164,9 +170,9 @@ function CheckoutPage() {
     if (!plano) return toast.error("Selecione um plano.");
     setCreating(true);
     try {
-      const r = await createCompany({ data: { nome: defaultCompanyName(ctx.user.email), plano_slug: plano.slug } });
+      const r = await createCompany({ data: { nome: defaultCompanyName(ctx.user.email), plano_slug: "starter" } });
       if (r.hasTrial) {
-        toast.success(`Teste grátis de ${plano.trial_days} dias iniciado!`);
+        toast.success("Teste Starter de 3 dias iniciado!");
         window.location.href = "/app/onboarding";
         return;
       }
@@ -187,7 +193,7 @@ function CheckoutPage() {
     if (!plano) return toast.error("Selecione um plano.");
     setPaying(true);
     try {
-      const res = await startCheckout({ data: { plano_slug: plano.slug, mode: upgradeMode ? "upgrade" : undefined } });
+      const res = await startCheckout({ data: { plano_slug: plano.slug, mode: upgradeMode ? "upgrade" : purchaseMode ? "purchase" : undefined } });
       if (res.kind === "support") { setSupportMessage(res.message); return; }
       setPaymentUrl(res.paymentUrl);
       window.open(res.paymentUrl, "_blank", "noopener,noreferrer");
@@ -201,24 +207,25 @@ function CheckoutPage() {
     }
   }
 
-  const headerBadge = upgradeMode ? { icon: <CreditCardBadge />, text: "Troca de plano" } : paywallMode
-    ? { icon: <Lock className="size-3.5 mr-1.5" />, text: "Seu período de teste terminou" }
-    : { icon: <Sparkles className="size-3.5 mr-1.5" />, text: `${plans[0]?.trial_days ?? 3} dias grátis sem cartão` };
+  const headerBadge = upgradeMode ? { icon: <CreditCardBadge />, text: "Troca de plano" } : paywallMode || purchaseMode
+    ? { icon: <Lock className="size-3.5 mr-1.5" />, text: "Ativação após pagamento" }
+    : { icon: <Sparkles className="size-3.5 mr-1.5" />, text: "Starter · 3 dias grátis" };
   const headerTitle = upgradeMode ? "Escolha seu próximo plano" : paywallMode
     ? "Ative seu plano para continuar"
-    : "Comece grátis em segundos";
+    : purchaseMode ? "Contratar um plano" : "Teste exclusivo do Starter";
   const headerSubtitle = upgradeMode ? "Seu plano e seu acesso permanecem como estão enquanto você compara as opções." : paywallMode
     ? "Seus dados ficam aqui esperando. Assim que o pagamento for confirmado, seu acesso é liberado automaticamente."
-    : "Escolha um plano para começar. Você não precisa pagar agora — só vai cobrar no final do período de teste, se quiser continuar.";
+    : purchaseMode ? "A contratação só libera o plano após a confirmação do pagamento. Até lá, seu teste continua no Starter."
+    : "Você recebe 3 dias de teste somente no Starter. Pro e Business não têm acesso gratuito.";
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
         <Button variant="ghost"
-          onClick={async () => { if (upgradeMode && ctx.company) { await navigate({ to: ctx.company.onboarding_completed ? "/app/configuracoes" : "/app/onboarding" }); return; } await supabase.auth.signOut(); window.location.href = "/"; }}
+          onClick={async () => { if (hasCompany && (upgradeMode || trialActive || purchaseMode)) { await navigate({ to: ctx.company?.onboarding_completed ? "/app/configuracoes" : "/app/onboarding" }); return; } await supabase.auth.signOut(); window.location.href = "/"; }}
           className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 mb-6"
         >
-          <ArrowLeft className="size-3.5" /> {upgradeMode ? "Voltar" : "Sair"}
+          <ArrowLeft className="size-3.5" /> {upgradeMode || trialActive || purchaseMode ? "Voltar" : "Sair"}
         </Button>
 
         <div className="text-center max-w-2xl mx-auto mb-10 md:mb-14">
@@ -243,7 +250,7 @@ function CheckoutPage() {
           <div className="grid place-items-center py-20"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
         ) : (
           <>
-            <div className="grid md:grid-cols-3 gap-4 lg:gap-6 items-stretch mb-10 md:mb-14">
+            <div className="grid xl:grid-cols-3 gap-4 lg:gap-6 items-stretch mb-10 md:mb-14">
               {plans.map((p) => {
                 const isSelected = selected === p.slug;
                 return (
@@ -274,14 +281,14 @@ function CheckoutPage() {
                         <span className="text-muted-foreground text-sm">/mês</span>
                       </div>
                       <p className="text-sm text-muted-foreground mt-2 min-h-[2.5rem]">{p.descricao}</p>
-                      {!paywallMode && !upgradeMode && (
+                      {!upgradeMode && (
                         <p className="text-[11px] text-primary font-semibold mt-1">
-                          {p.trial_days > 0 ? `${p.trial_days} dias grátis — sem cartão` : "Ativo após o pagamento"}
+                          {p.slug === "starter" && trialLocked ? "3 dias grátis — sem cartão" : "Ativo após o pagamento"}
                         </p>
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-2 mb-5">
-                      <Limit label="WhatsApp" v={1} />
+                      <Limit label="WhatsApp" v={p.limite_instancias} />
                       <Limit label="Usuários" v={p.limite_usuarios} />
                       <Limit label="Conversas/mês" v={p.limite_mensagens} />
                       <Limit label="Contatos" v={p.limite_contatos} />
@@ -297,12 +304,13 @@ function CheckoutPage() {
                       ))}
                     </ul>
                     <Button
-                      onClick={() => setSelected(p.slug)}
+                      onClick={() => { if (canSelect) setSelected(p.slug); }}
+                      disabled={!canSelect || paying || waiting}
                       variant={isSelected ? "default" : "outline"}
                       size="lg"
                       className="w-full font-semibold"
                     >
-                      {isSelected ? (<><Check className="size-4 mr-1.5" /> Plano escolhido</>) : "Escolher este plano"}
+                      {trialLocked ? (p.slug === "starter" ? "Teste Starter" : "Exige pagamento") : isSelected ? (<><Check className="size-4 mr-1.5" /> Plano para contratar</>) : "Contratar este plano"}
                     </Button>
                   </Card>
                 );
@@ -312,7 +320,11 @@ function CheckoutPage() {
             <div className="max-w-2xl mx-auto">
               <div className="border-t pt-6 md:pt-8 text-center">
                 {supportMessage && <p role="status" className="border border-primary/30 rounded-md p-4 mb-4 text-sm">{supportMessage}</p>}
-                {upgradeMode ? <div className="space-y-4">
+                {trialActive && !purchaseMode ? <div className="space-y-4">
+                  <h2 className="font-display text-xl font-bold">Seu teste é Starter</h2>
+                  <p className="text-sm text-muted-foreground">Não é possível mudar o plano gratuito. Para liberar Starter pago, Pro ou Business, é necessário confirmar o pagamento.</p>
+                  <Button asChild><Link to="/app/checkout" search={{ mode: "purchase", plano: "starter" }}>Contratar plano pago</Link></Button>
+                </div> : upgradeMode ? <div className="space-y-4">
                   <h2 className="font-display text-xl font-bold">Solicitar alteração de plano</h2>
                   <p className="text-sm text-muted-foreground">{CHECKOUT_SUPPORT_MESSAGE}</p>
                   <Button asChild disabled={!plano}><a href={`${supportWhatsappUrl}?text=${encodeURIComponent(`Olá! Quero alterar o plano da minha empresa ${ctx.company?.nome ?? ""} para ${plano?.nome ?? ""}. Por favor, confiram também a cobrança externa existente.`)}`} target="_blank" rel="noreferrer">Falar com o suporte <ExternalLink className="size-4" /></a></Button>
@@ -337,7 +349,7 @@ function CheckoutPage() {
                       </a>
                     )}
                   </div>
-                ) : paywallMode ? (
+                ) : paywallMode || purchaseMode ? (
                   <>
                     <div className="flex items-center justify-center gap-2 mb-3">
                       <Lock className="size-5 text-primary" />
@@ -365,11 +377,7 @@ function CheckoutPage() {
                     </div>
                     <p className="text-sm text-muted-foreground mb-5">
                       Plano escolhido: <span className="font-semibold text-foreground">{plano?.nome}</span>.{" "}
-                      {(plano?.trial_days ?? 0) > 0 ? (
-                        <>Você ganha <b>{plano?.trial_days} dias grátis</b> pra explorar tudo, sem precisar de cartão. Cobramos só se você decidir continuar.</>
-                      ) : (
-                        <>Este plano é ativado <b>somente após o pagamento</b>. Ao continuar, abriremos a página de pagamento seguro.</>
-                      )}
+                      Você ganha <b>3 dias grátis no Starter</b>, sem cartão. Pro e Business só são liberados após pagamento.
                     </p>
                     <Button
                       onClick={iniciarTrial}
@@ -378,7 +386,7 @@ function CheckoutPage() {
                       className="w-full md:w-auto font-semibold"
                     >
                       {creating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Sparkles className="size-4 mr-2" />}
-                      {(plano?.trial_days ?? 0) > 0 ? `Começar ${plano?.trial_days} dias grátis` : "Continuar para pagamento"}
+                      Começar 3 dias no Starter
                     </Button>
                   </>
                 )}
@@ -396,8 +404,8 @@ function CheckoutPage() {
 
 function Limit({ label, v }: { label: string; v: number }) {
   return (
-    <div className="bg-muted/50 rounded-lg px-2.5 py-1.5 flex items-center justify-between text-xs">
-      <span className="text-muted-foreground">{label}</span>
+    <div className="bg-muted/50 rounded-lg px-2.5 py-1.5 flex flex-col gap-1 min-w-0 text-xs">
+      <span className="text-muted-foreground break-words">{label}</span>
       <span className="font-semibold">{v.toLocaleString("pt-BR")}</span>
     </div>
   );

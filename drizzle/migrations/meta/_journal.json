@@ -71,6 +71,13 @@
       "when": 1792889089764,
       "tag": "0009_trial_only_starter_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792893166101,
+      "tag": "0010_protect_customer_billing_entitlements",
+      "breakpoints": true
     }
   ]
 }

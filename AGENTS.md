@@ -11,6 +11,7 @@
 - Authenticated, persisted WhatsApp customer automation is awaited inside a heartbeat response stream so slow provider calls do not leave a buffered webhook connection idle; pre-authentication and intentional no-reply exits retain their normal responses.
 
 - Checkout upgrade is explicit and support-only until provider updates and entitlement reconciliation are implemented together; ordinary payment reuses only matching-plan Asaas subscriptions, and durable subscription reservation blocks concurrent/uncertain duplicate creation.
+- Customer free provisioning always uses the atomic Starter creation RPC; trial entitlement ignores purchase selection, while an explicit purchase is due immediately and only the authenticated provider payment event grants paid access. Protect billing fields against direct tenant writes so UI state cannot bypass payment.
 
 - Master plan mutations use a service-role-only RPC after assertSuper with an explicit access period; lock the company and atomically preserve canceled subscription history, update entitlement/expiry and write existing audit_log, without calling external billing providers. Temporary grants expire through company access RLS and the app gate; permanent grants have no expiry.
 
