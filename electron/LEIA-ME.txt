@@ -1,0 +1,23 @@
+FLOWA para Windows — versão portátil 1.0.0 (64 bits)
+
+1. Extraia a pasta inteira do ZIP para seu computador.
+2. Abra FLOWA.exe dentro da pasta extraída. Não mova só o EXE.
+3. Entre com o mesmo e-mail e senha do site https://flowa.store.
+
+É necessário Windows 10/11 de 64 bits e internet. O programa abre
+o site oficial em uma janela própria; não é uma versão offline.
+O login fica salvo no perfil local do Windows. Não compartilhe esse perfil.
+Atualizações do site aparecem automaticamente. Atualizações do programa
+Electron exigem uma nova distribuição; não há atualizador automático.
+
+Links de pagamento, suporte e autorização Google abrem no navegador padrão.
+Após autorizar o Google no navegador, recarregue a tela do programa.
+Confirmação de e-mail e recuperação de senha também abrem no navegador;
+depois volte ao programa e entre com sua senha.
+
+Esta distribuição não tem assinatura digital nem instalador.
+O Windows pode mostrar um aviso de editor desconhecido. Não desative
+o antivírus. A execução real no Windows, autorização Google e pagamentos
+não foram validados neste ambiente. Não é uma versão certificada para lojas.
+
+Suporte: https://flowa.store
