@@ -1,5 +1,10 @@
 # FLOWA reference-led presentation replacement
 
+## Account identity and Starter-only trial
+- [ ] Distinguish tenant account responsibility from FLOWA platform ownership in the workspace identity.
+- [ ] Restrict new free trials to Starter and separate paid purchase from trial entitlement; validate payment guards without creating real charges.
+- [ ] Run focused tests and authenticated browser checks; do not publish.
+
 ## Windows desktop application
 - [x] Create an isolated secure desktop wrapper for the published site, preserving web login and online functionality without changing billing or the site.
 - [x] Three desktop policy/runtime-mock tests passed; hosted login and offline page rendered; portable Windows ZIP and internal ASAR inspected. Actual Windows execution/authenticated desktop flow and signing remain unverified; no publication.
