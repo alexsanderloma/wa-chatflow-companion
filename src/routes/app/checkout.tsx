@@ -163,11 +163,20 @@ function CheckoutPage() {
     if (!plano) return toast.error("Selecione um plano.");
     setCreating(true);
     try {
-      await createCompany({ data: { nome: defaultCompanyName(ctx.user.email), plano_slug: plano.slug } });
-      toast.success(`Teste grátis de ${plano.trial_days} dias iniciado!`);
-      window.location.href = "/app/onboarding";
+      const r = await createCompany({ data: { nome: defaultCompanyName(ctx.user.email), plano_slug: plano.slug } });
+      if (r.hasTrial) {
+        toast.success(`Teste grátis de ${plano.trial_days} dias iniciado!`);
+        window.location.href = "/app/onboarding";
+        return;
+      }
+      // Plano sem trial: cria a empresa e já abre o pagamento (acesso só após pagar).
+      const res = await startCheckout({ data: { plano_slug: plano.slug } });
+      if (res.kind === "support") { setSupportMessage(res.message); return; }
+      setPaymentUrl(res.paymentUrl);
+      window.open(res.paymentUrl, "_blank", "noopener,noreferrer");
+      setWaiting(true);
     } catch (e: any) {
-      toast.error(e.message || "Falha ao iniciar teste");
+      toast.error(e.message || "Falha ao iniciar");
     } finally {
       setCreating(false);
     }
@@ -266,7 +275,7 @@ function CheckoutPage() {
                       <p className="text-sm text-muted-foreground mt-2 min-h-[2.5rem]">{p.descricao}</p>
                       {!paywallMode && !upgradeMode && (
                         <p className="text-[11px] text-primary font-semibold mt-1">
-                          {p.trial_days} dias grátis — sem cartão
+                          {p.trial_days > 0 ? `${p.trial_days} dias grátis — sem cartão` : "Ativo após o pagamento"}
                         </p>
                       )}
                     </div>
@@ -354,9 +363,12 @@ function CheckoutPage() {
                       <h2 className="font-display text-xl font-bold">Pronto pra começar?</h2>
                     </div>
                     <p className="text-sm text-muted-foreground mb-5">
-                      Plano escolhido: <span className="font-semibold text-foreground">{plano?.nome}</span>.
-                      Você ganha <b>{plano?.trial_days ?? 3} dias grátis</b> pra explorar tudo, sem precisar de cartão.
-                      Cobramos só se você decidir continuar.
+                      Plano escolhido: <span className="font-semibold text-foreground">{plano?.nome}</span>.{" "}
+                      {(plano?.trial_days ?? 0) > 0 ? (
+                        <>Você ganha <b>{plano?.trial_days} dias grátis</b> pra explorar tudo, sem precisar de cartão. Cobramos só se você decidir continuar.</>
+                      ) : (
+                        <>Este plano é ativado <b>somente após o pagamento</b>. Ao continuar, abriremos a página de pagamento seguro.</>
+                      )}
                     </p>
                     <Button
                       onClick={iniciarTrial}
@@ -365,7 +377,7 @@ function CheckoutPage() {
                       className="w-full md:w-auto font-semibold"
                     >
                       {creating ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Sparkles className="size-4 mr-2" />}
-                      Começar {plano?.trial_days ?? 3} dias grátis
+                      {(plano?.trial_days ?? 0) > 0 ? `Começar ${plano?.trial_days} dias grátis` : "Continuar para pagamento"}
                     </Button>
                   </>
                 )}
