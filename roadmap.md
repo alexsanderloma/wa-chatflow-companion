@@ -1,8 +1,8 @@
 # FLOWA reference-led presentation replacement
 
 ## Windows desktop application
-- [ ] Create an isolated secure desktop wrapper for the published site, preserving web login and online functionality without changing billing or the site.
-- [ ] Run desktop security tests and package a portable Windows ZIP; disclose lack of Windows/signing verification.
+- [x] Create an isolated secure desktop wrapper for the published site, preserving web login and online functionality without changing billing or the site.
+- [x] Three desktop policy/runtime-mock tests passed; hosted login and offline page rendered; portable Windows ZIP and internal ASAR inspected. Actual Windows execution/authenticated desktop flow and signing remain unverified; no publication.
 
 ## AI economy, plan credits and Master finance
 - [x] Read-only audit of current source, live plan values/RPCs, billing records, Gateway request samples and authenticated model catalog.
