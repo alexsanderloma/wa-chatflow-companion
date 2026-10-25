@@ -406,7 +406,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard
       f: [
         "1 número de WhatsApp",
         "1 usuário",
-        "1.500 conversas/mês",
+        "1.000 conversas/mês",
         "1.000 contatos",
         "CRM Kanban + IA Gemini",
         "Suporte por email",
@@ -428,8 +428,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard
         "Suporte prioritário",
       ],
       highlight: true,
-      cta: "Quero o Pro — 3 dias grátis",
-      badge: "Economize 2 meses no anual",
+      cta: "Quero o Pro",
     },
     {
       slug: "business",
@@ -452,7 +451,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard
     <section id="planos" className="px-5 md:px-8 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionTitle eyebrow="Planos" title={<>Quanto mais <span className="text-grad">cresce</span>, mais <span className="text-grad">economiza</span>.</>} />
-        <p className="text-center text-foreground/55 max-w-2xl mx-auto mt-4 text-[15px]">Todos os planos têm 3 dias grátis. Cancele antes do fim do trial e não é cobrado.</p>
+        <p className="text-center text-foreground/55 max-w-2xl mx-auto mt-4 text-[15px]">Só o Starter tem 3 dias grátis. Pro e Business são ativados depois do pagamento.</p>
         <div className="mt-12 grid md:grid-cols-3 gap-5 items-stretch">
           {plans.map((pl) => (
             <div
@@ -463,7 +462,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard
             >
               {pl.highlight && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] uppercase font-bold tracking-wider px-3 py-1 rounded-full text-primary-foreground whitespace-nowrap" style={{ background: "var(--brand)" }}>
-                  Mais popular · 4× mais conversas
+                  Mais popular · 5× mais conversas
                 </div>
               )}
               <div className="text-sm text-foreground/60 font-semibold uppercase tracking-wider">{pl.n}</div>
@@ -494,7 +493,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard
             </div>
           ))}
         </div>
-        <p className="mt-5 text-center text-xs text-foreground/40">Cartão é exigido apenas para liberar o trial. Cancele em até 3 dias e não pagamos nada.</p>
+        <p className="mt-5 text-center text-xs text-foreground/40">O trial de 3 dias é só no Starter. Pro e Business são ativados após o pagamento.</p>
       </div>
     </section>
   );
