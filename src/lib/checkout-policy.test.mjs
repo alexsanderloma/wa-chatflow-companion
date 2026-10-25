@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkoutRedirect, planChangeSearch, checkoutPaymentDecision, CHECKOUT_SUPPORT_MESSAGE } from "./checkout-policy.ts";
+import { checkoutRedirect, planChangeSearch, checkoutPaymentDecision, CHECKOUT_SUPPORT_MESSAGE, companyStatusForPlan } from "./checkout-policy.ts";
 const now = Date.parse("2026-10-23T21:27:00Z");
 const company = { status_cobranca: "ativo", trial_ate: "2026-10-26T00:00:00Z", onboarding_completed: true };
 const sub = { id: "local", plan_id: "pro-id", provider: "asaas", status: "active", external_subscription_id: "sub_existing" };
@@ -36,4 +36,10 @@ test("unknown, canceled external history and durable reservation prevent duplica
   assert.equal(decision({ subscriptions: [sub, { ...sub, id: "second" }] }).kind, "support");
   assert.equal(decision().kind, "create");
   assert.deepEqual(decision({ subscriptions: [{ ...sub, provider: "manual", external_subscription_id: null }] }), { kind: "create", rowId: "local" });
+});test("only plans with trial days start in trial; zero-trial plans wait for payment", () => {
+  assert.equal(companyStatusForPlan(3), "trial");
+  assert.equal(companyStatusForPlan(7), "trial");
+  assert.equal(companyStatusForPlan(0), "checkout_pending");
+  assert.equal(companyStatusForPlan(null), "checkout_pending");
+  assert.equal(companyStatusForPlan(undefined), "checkout_pending");
 });

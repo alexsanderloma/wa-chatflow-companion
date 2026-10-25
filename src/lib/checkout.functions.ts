@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { slugify } from "@/lib/tenant";
 import { buildFlowaReference } from "@/lib/billing/normalize";
-import { checkoutPaymentDecision, CHECKOUT_PENDING_MESSAGE } from "@/lib/checkout-policy";
+import { checkoutPaymentDecision, CHECKOUT_PENDING_MESSAGE, companyStatusForPlan } from "@/lib/checkout-policy";
 
 const CURRENT_SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "incomplete", "paused"];
 
@@ -28,7 +28,8 @@ export const createCheckoutCompany = createServerFn({ method: "POST" })
     if (existingErr) throw existingErr;
     if (existing?.company_id) return { companyId: existing.company_id as string };
 
-    // Trial days: do plano escolhido (ou starter como fallback).
+    // Trial days: do plano escolhido (ou starter como fallback). Planos sem
+    // trial (trial_days = 0) nascem em checkout_pending: acesso só após pagamento.
     let trialDays = 3;
     let planSlug = data.plano_slug;
     if (planSlug) {
@@ -37,17 +38,18 @@ export const createCheckoutCompany = createServerFn({ method: "POST" })
         .select("trial_days, slug")
         .eq("slug", planSlug)
         .maybeSingle();
-      if (plan?.trial_days != null) trialDays = Number(plan.trial_days) || trialDays;
+      if (plan?.trial_days != null) trialDays = Number(plan.trial_days);
     } else {
       const { data: starter } = await supabaseAdmin
         .from("plan")
         .select("trial_days, slug")
         .eq("slug", "starter")
         .maybeSingle();
-      if (starter?.trial_days != null) trialDays = Number(starter.trial_days) || trialDays;
+      if (starter?.trial_days != null) trialDays = Number(starter.trial_days);
       planSlug = starter?.slug ?? null;
     }
 
+    const hasTrial = trialDays > 0;
     const slug = `${slugify(data.nome)}-${Math.random().toString(36).slice(2, 6)}`;
     const trialAte = new Date(Date.now() + trialDays * 86400000).toISOString();
 
@@ -58,7 +60,7 @@ export const createCheckoutCompany = createServerFn({ method: "POST" })
         slug,
         primary_color: "#25D366",
         created_by: context.userId,
-        status_cobranca: "trial",
+        status_cobranca: companyStatusForPlan(trialDays),
         onboarding_completed: false,
         onboarding_step: 0,
         trial_ate: trialAte,
@@ -76,7 +78,7 @@ export const createCheckoutCompany = createServerFn({ method: "POST" })
     });
     if (memberErr) throw memberErr;
 
-    return { companyId: company.id as string };
+    return { companyId: company.id as string, hasTrial };
   });
 
 // Inicia o checkout Asaas da PRÓPRIA empresa do usuário (paywall). O companyId

@@ -63,8 +63,8 @@ function NovaEmpresa() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Nova empresa</h1>
         <p className="text-sm text-muted-foreground">
-          Cria a empresa, o usuário responsável e libera o plano com período de teste.
-          Ao fim do trial o cliente precisa cadastrar o cartão para continuar.
+          Cria a empresa e o usuário responsável. Planos com trial (Starter) são liberados em teste;
+          planos sem trial (Pro e Business) ficam aguardando o pagamento do cliente para ativar.
         </p>
       </div>
 

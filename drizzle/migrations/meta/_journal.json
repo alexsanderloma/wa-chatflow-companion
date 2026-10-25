@@ -64,6 +64,13 @@
       "when": 1792860604999,
       "tag": "0008_atomic_paid_subscription_credit_cycle",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792889089764,
+      "tag": "0009_trial_only_starter_plan",
+      "breakpoints": true
     }
   ]
 }

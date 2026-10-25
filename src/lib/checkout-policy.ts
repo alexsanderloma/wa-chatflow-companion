@@ -2,6 +2,11 @@ export const CHECKOUT_SUPPORT_MESSAGE = "A alteração deste plano precisa ser f
 export const CHECKOUT_PENDING_MESSAGE = "Já existe uma solicitação de pagamento em andamento ou que precisa de conferência. Não criaremos outra cobrança. Entre em contato com o suporte para verificar.";
 export const CHECKOUT_CURRENT_STATUSES = ["trialing", "active", "past_due", "incomplete", "paused"];
 
+// Planos sem trial (trial_days = 0) nascem aguardando pagamento; só o Starter tem trial.
+export function companyStatusForPlan(trialDays: number | null | undefined) {
+  return (Number(trialDays) || 0) > 0 ? "trial" : "checkout_pending";
+}
+
 export function checkoutRedirect(company: { status_cobranca: string; trial_ate: string; onboarding_completed?: boolean | null } | null, mode?: string, now = Date.now()) {
   if (!company || mode === "upgrade") return null;
   const hasAccess = company.status_cobranca === "ativo" || (company.status_cobranca === "trial" && Date.parse(company.trial_ate) > now);
