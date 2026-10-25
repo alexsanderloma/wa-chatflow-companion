@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { slugify } from "@/lib/tenant";
 import { buildFlowaReference } from "@/lib/billing/normalize";
-import { checkoutPaymentDecision, CHECKOUT_PENDING_MESSAGE } from "@/lib/checkout-policy";
+import { checkoutPaymentDecision, CHECKOUT_PENDING_MESSAGE, companyStatusForPlan } from "@/lib/checkout-policy";
 
 const CURRENT_SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "incomplete", "paused"];
 
