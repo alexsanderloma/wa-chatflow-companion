@@ -34,7 +34,7 @@ type Subscription = {
   external_subscription_id: string | null; metadata?: unknown;
 };
 export function checkoutPaymentDecision(input: { mode?: string; companyStatus: string; planId: string; subscriptions: Subscription[] }) {
-  if (input.companyStatus === "ativo" || (input.mode === "upgrade" && input.companyStatus !== "trial_expired") || (input.companyStatus === "trial" && input.mode !== "purchase")) {
+  if (input.companyStatus === "ativo" || input.mode === "upgrade" || (input.companyStatus === "trial" && input.mode !== "purchase")) {
     return { kind: "support" as const, message: CHECKOUT_SUPPORT_MESSAGE };
   }
   const current = input.subscriptions.filter((s) => CHECKOUT_CURRENT_STATUSES.includes(s.status));
