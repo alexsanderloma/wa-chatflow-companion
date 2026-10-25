@@ -421,7 +421,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard
       f: [
         "1 número de WhatsApp",
         "5 usuários no painel",
-        "6.000 conversas/mês",
+        "5.000 conversas/mês",
         "5.000 contatos",
         "IA Gemini + GPT + Claude",
         "Google Agenda + Relatórios",
@@ -439,7 +439,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard
       f: [
         "1 número de WhatsApp",
         "20 usuários no painel",
-        "30.000 conversas/mês",
+        "20.000 conversas/mês",
         "25.000 contatos",
         "API + Webhooks",
         "Onboarding 1:1 + Gerente dedicado",

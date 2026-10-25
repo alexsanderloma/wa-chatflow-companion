@@ -1,4 +1,4 @@
-export const MONTHLY_ALLOWANCES = { starter: 1000, pro: 6000, business: 30000 } as const;
+export const MONTHLY_ALLOWANCES = { starter: 1000, pro: 5000, business: 20000 } as const;
 export const MONTHLY_PRICES_CENTS = { starter: 9700, pro: 19700, business: 49700 } as const;
 
 export function estimateGatewayCredits(input: number | null, output: number | null, audio = false) {
