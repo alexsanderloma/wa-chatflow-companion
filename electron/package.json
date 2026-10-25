@@ -9,5 +9,9 @@
     "start": "electron .",
     "test": "node --test policy.test.cjs main.test.cjs",
     "package:windows": "electron-packager . FLOWA --platform=win32 --arch=x64 --out=release --overwrite --icon=icon.ico --ignore=^/release --ignore=\\.test\\.cjs$ --ignore=^/bun\\.lock$"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.0.0"
   }
 }
