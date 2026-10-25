@@ -1,5 +1,9 @@
 # FLOWA reference-led presentation replacement
 
+## Windows desktop application
+- [ ] Create an isolated secure desktop wrapper for the published site, preserving web login and online functionality without changing billing or the site.
+- [ ] Run desktop security tests and package a portable Windows ZIP; disclose lack of Windows/signing verification.
+
 ## AI economy, plan credits and Master finance
 - [x] Read-only audit of current source, live plan values/RPCs, billing records, Gateway request samples and authenticated model catalog.
 - [x] Corrected future 1.000/6.000/30.000 allowances without changing prices/current balances; added reserved delivered-response charging, payment/cycle-idempotent paid resets, Gateway usage capture, flexible economy context and Master-only finance.
