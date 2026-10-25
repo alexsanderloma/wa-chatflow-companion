@@ -11,14 +11,8 @@ async function getCompanyAndPlan(supabase: any, userId: string) {
     .limit(1)
     .maybeSingle();
   if (!cu) throw new Error("Sem empresa vinculada");
-  const { data: sub } = await supabase
-    .from("subscription")
-    .select("plan:plan(nome)")
-    .eq("company_id", cu.company_id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const planSlug = String(sub?.plan?.nome || "starter").toLowerCase();
+  const { getCompanyPlan } = await import("@/lib/plan-limits.server");
+  const planSlug = (await getCompanyPlan(cu.company_id)).slug;
   return { companyId: cu.company_id, role: cu.role, company: cu.company, planSlug };
 }
 

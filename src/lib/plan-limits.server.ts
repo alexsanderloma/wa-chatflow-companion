@@ -1,6 +1,7 @@
 // SERVER ONLY. Usa supabaseAdmin para resolver plano + uso, sem expor chave.
 import { PLAN_LABEL, normalizePlanSlug, type PlanSlug } from "./plan-features";
 import { instanceLimit } from "./instance-limit";
+import { checkoutAccessPlan } from "./checkout-policy";
 
 export type LimitKind = "instancias" | "usuarios" | "contatos" | "mensagens";
 
@@ -40,7 +41,11 @@ export async function getCompanyPlan(companyId: string): Promise<CompanyPlan> {
     .limit(1)
     .maybeSingle();
 
+  const { data: company, error: companyError } = await supabaseAdmin.from("company")
+    .select("status_cobranca,master_access_until").eq("id", companyId).single();
+  if (companyError || !company) throw new Error("Não foi possível confirmar o acesso da empresa.");
   let row: any = sub?.plan ?? null;
+  if (checkoutAccessPlan(company.status_cobranca, row?.slug, company.master_access_until) === "starter") row = null;
 
   // 2) Fallback: plano starter ativo
   if (!row) {

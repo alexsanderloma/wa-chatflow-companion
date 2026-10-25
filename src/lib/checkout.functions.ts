@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { slugify } from "@/lib/tenant";
 import { buildFlowaReference } from "@/lib/billing/normalize";
-import { checkoutPaymentDecision, CHECKOUT_PENDING_MESSAGE, companyStatusForPlan } from "@/lib/checkout-policy";
+import { checkoutPaymentDecision, CHECKOUT_PENDING_MESSAGE, STARTER_TRIAL_DAYS } from "@/lib/checkout-policy";
 
 const CURRENT_SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due", "incomplete", "paused"];
 
@@ -28,57 +28,17 @@ export const createCheckoutCompany = createServerFn({ method: "POST" })
     if (existingErr) throw existingErr;
     if (existing?.company_id) return { companyId: existing.company_id as string };
 
-    // Trial days: do plano escolhido (ou starter como fallback). Planos sem
-    // trial (trial_days = 0) nascem em checkout_pending: acesso só após pagamento.
-    let trialDays = 3;
-    let planSlug = data.plano_slug;
-    if (planSlug) {
-      const { data: plan } = await supabaseAdmin
-        .from("plan")
-        .select("trial_days, slug")
-        .eq("slug", planSlug)
-        .maybeSingle();
-      if (plan?.trial_days != null) trialDays = Number(plan.trial_days);
-    } else {
-      const { data: starter } = await supabaseAdmin
-        .from("plan")
-        .select("trial_days, slug")
-        .eq("slug", "starter")
-        .maybeSingle();
-      if (starter?.trial_days != null) trialDays = Number(starter.trial_days);
-      planSlug = starter?.slug ?? null;
-    }
-
-    const hasTrial = trialDays > 0;
+    // Caller-supplied plan cannot change the free entitlement. Provision atomically.
+    const { data: starter, error: planError } = await supabaseAdmin.from("plan")
+      .select("id,trial_days").eq("slug", "starter").eq("ativo", true).single();
+    if (planError || !starter || starter.trial_days !== STARTER_TRIAL_DAYS) throw new Error("O teste Starter está indisponível. Entre em contato com o suporte.");
     const slug = `${slugify(data.nome)}-${Math.random().toString(36).slice(2, 6)}`;
-    const trialAte = new Date(Date.now() + trialDays * 86400000).toISOString();
-
-    const { data: company, error: companyErr } = await supabaseAdmin
-      .from("company")
-      .insert({
-        nome: data.nome,
-        slug,
-        primary_color: "#25D366",
-        created_by: context.userId,
-        status_cobranca: companyStatusForPlan(trialDays),
-        onboarding_completed: false,
-        onboarding_step: 0,
-        trial_ate: trialAte,
-        selected_plan_slug: planSlug,
-      } as any)
-      .select("id")
-      .single();
-    if (companyErr || !company) throw new Error(companyErr?.message || "Falha ao criar empresa");
-
-    const { error: memberErr } = await supabaseAdmin.from("company_user").insert({
-      user_id: context.userId,
-      company_id: company.id,
-      role: "owner",
-      ativo: true,
+    const { data: created, error: companyErr } = await supabaseAdmin.rpc("create_company_with_owner", {
+      _owner_id: context.userId, _nome: data.nome, _slug: slug, _plan_id: starter.id, _forcar_troca_senha: false,
     });
-    if (memberErr) throw memberErr;
-
-    return { companyId: company.id as string, hasTrial };
+    const company = created?.[0];
+    if (companyErr || !company) throw new Error("Não foi possível iniciar o teste Starter.");
+    return { companyId: company.company_id, hasTrial: true };
   });
 
 // Inicia o checkout Asaas da PRÓPRIA empresa do usuário (paywall). O companyId
@@ -88,7 +48,7 @@ export const startAsaasCheckout = createServerFn({ method: "POST" })
   .inputValidator((d: { plano_slug: string; mode?: string }) => {
     const plano_slug = String(d?.plano_slug || "").toLowerCase().trim();
     if (!plano_slug) throw new Error("Plano não informado.");
-    return { plano_slug, mode: d.mode === "upgrade" ? "upgrade" : undefined };
+    return { plano_slug, mode: d.mode === "upgrade" || d.mode === "purchase" ? d.mode : undefined };
   })
   .handler(async ({ context, data }) => {
     const { data: membership, error: memErr } = await context.supabase
@@ -141,7 +101,7 @@ export const startAsaasCheckout = createServerFn({ method: "POST" })
     const current = subscriptions?.find((s) => s.id === decision.rowId);
     const metadata = { ...(current?.metadata && typeof current.metadata === "object" && !Array.isArray(current.metadata) ? current.metadata : {}), checkout_reservation: reservationId };
     const reserved = current ? await supabaseAdmin.from("subscription")
-      .update({ metadata, updated_at: new Date().toISOString() }).eq("id", current.id)
+      .update({ metadata, plan_id: plan.id, status: "incomplete", updated_at: new Date().toISOString() }).eq("id", current.id)
       .eq("updated_at", current.updated_at).is("external_subscription_id", null)
       .in("status", CURRENT_SUBSCRIPTION_STATUSES).select("id").maybeSingle()
       : await supabaseAdmin.from("subscription").insert({ company_id: companyId, plan_id: plan.id,
@@ -155,8 +115,8 @@ export const startAsaasCheckout = createServerFn({ method: "POST" })
       cpfCnpj: company.cnpj_cpf,
     });
 
-    const trialDays = Number(plan.trial_days) || 0;
-    const trialEnd = new Date(Date.now() + trialDays * 86400000);
+    // An explicit purchase is due now, never another free trial.
+    const trialEnd = new Date();
     const nextDueDate = trialEnd.toISOString().slice(0, 10);
 
     const created = await createAsaasSubscription({

@@ -11,13 +11,13 @@ export function TrialBanner({ company }: { company: CompanyRow }) {
       <AlertTriangle className="size-4 shrink-0" />
       <span>
         {days > 0 ? (
-          <>Período de teste — restam <b>{days} {days === 1 ? "dia" : "dias"}</b>. Cadastre seu cartão antes do fim do trial.</>
+          <>Teste Starter — restam <b>{days} {days === 1 ? "dia" : "dias"}</b>. Outros planos exigem pagamento.</>
         ) : (
           <>Seu período de teste terminou. Ative seu plano para continuar.</>
         )}
       </span>
       <Link
-        to="/app/checkout" search={days > 0 ? { mode: "upgrade" } : {}}
+        to="/app/checkout" search={{ mode: "purchase", plano: "starter" }}
         className="ml-2 inline-flex items-center rounded-md bg-white/15 hover:bg-white/25 px-2.5 py-0.5 text-xs font-semibold ring-1 ring-white/30"
       >
         Ativar plano

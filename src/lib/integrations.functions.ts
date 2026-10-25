@@ -66,10 +66,8 @@ export const createApiToken = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const cid = await resolveCompanyId(context.supabase, context.userId);
     // Gating: apenas Business
-    const { data: sub } = await context.supabase
-      .from("subscription").select("plan:plan(slug)")
-      .eq("company_id", cid).order("created_at", { ascending: false }).limit(1).maybeSingle();
-    const slug = (sub as any)?.plan?.slug ?? "starter";
+    const { getCompanyPlan } = await import("@/lib/plan-limits.server");
+    const slug = (await getCompanyPlan(cid)).slug;
     if (slug !== "business") throw new Error("API pública disponível apenas no plano Business.");
     const { data: row, error } = await context.supabase
       .from("api_token").insert({ company_id: cid, label: data.label, criado_por: context.userId })
