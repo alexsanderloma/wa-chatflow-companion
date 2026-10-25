@@ -78,7 +78,7 @@ export const createCheckoutCompany = createServerFn({ method: "POST" })
     });
     if (memberErr) throw memberErr;
 
-    return { companyId: company.id as string };
+    return { companyId: company.id as string, hasTrial };
   });
 
 // Inicia o checkout Asaas da PRÓPRIA empresa do usuário (paywall). O companyId
