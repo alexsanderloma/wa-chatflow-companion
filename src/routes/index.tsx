@@ -493,7 +493,7 @@ function Pricing({ onCta }: { onCta: (p: "/entrar" | "/login" | "/demo/dashboard
             </div>
           ))}
         </div>
-        <p className="mt-5 text-center text-xs text-foreground/40">O trial de 3 dias é só no Starter. Pro e Business são ativados após o pagamento.</p>
+        <p className="mt-5 text-center text-xs text-foreground/40">Cancele antes do fim do trial e nada é cobrado.</p>
       </div>
     </section>
   );
