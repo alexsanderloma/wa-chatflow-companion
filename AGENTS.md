@@ -1,5 +1,7 @@
 # AGENTS.md
 
+- Desktop packaging stays isolated under electron and loads the official HTTPS site with sandboxed persistent browser storage; keep remote content away from Node and open external destinations in the system browser, preserving hosted auth and server behavior without a duplicate web build.
+
 - Workspace mobile navigation keeps four quick links plus a complete sheet menu derived from the desktop sections, preserving the same role filters so destinations cannot disappear on phones.
 
 - Gemini chat and WhatsApp media share a streaming, server-only Lovable Gateway transport with durable access pauses and per-call usage; the direct Google module remains inactive, while OpenAI/Anthropic retain their tenant-key transports.
