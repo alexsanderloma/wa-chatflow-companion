@@ -126,10 +126,11 @@ function CheckoutPage() {
       if (data?.length) {
         const list = data as Plano[];
         setPlans(list);
+        // Padrão: Starter (único com trial grátis). Nunca pré-selecionar o plano em destaque.
         const initial =
           search.plano ||
           ctx.company?.selected_plan_slug ||
-          list.find((p) => p.destaque)?.slug ||
+          list.find((p) => p.slug === "starter")?.slug ||
           list[0].slug;
         if (!selected || !list.find((p) => p.slug === selected)) setSelected(initial);
       }
