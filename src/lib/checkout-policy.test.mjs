@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkoutRedirect, planChangeSearch, checkoutPaymentDecision, CHECKOUT_SUPPORT_MESSAGE, companyStatusForPlan } from "./checkout-policy.ts";
+import { checkoutRedirect, planChangeSearch, checkoutPaymentDecision, CHECKOUT_SUPPORT_MESSAGE, companyStatusForPlan, checkoutInitialPlan, checkoutCanSelect, checkoutAccessPlan, STARTER_TRIAL_DAYS } from "./checkout-policy.ts";
 const now = Date.parse("2026-10-23T21:27:00Z");
 const company = { status_cobranca: "ativo", trial_ate: "2026-10-26T00:00:00Z", onboarding_completed: true };
 const sub = { id: "local", plan_id: "pro-id", provider: "asaas", status: "active", external_subscription_id: "sub_existing" };
@@ -42,4 +42,26 @@ test("unknown, canceled external history and durable reservation prevent duplica
   assert.equal(companyStatusForPlan(0), "checkout_pending");
   assert.equal(companyStatusForPlan(null), "checkout_pending");
   assert.equal(companyStatusForPlan(undefined), "checkout_pending");
+});
+test("new customers only receive three Starter trial days regardless of requested plan", () => {
+  assert.equal(STARTER_TRIAL_DAYS, 3);
+  for (const slug of ["starter", "pro", "business"]) assert.equal(checkoutInitialPlan(null, "upgrade", slug), "starter");
+  assert.equal(checkoutCanSelect(null, "purchase"), false);
+});
+test("Pro and Business cannot get trial even if their configured days are nonzero", () => {
+  assert.equal(companyStatusForPlan(3, "pro"), "checkout_pending");
+  assert.equal(companyStatusForPlan(3, "business"), "checkout_pending");
+});
+test("customer trial cannot select another free plan, including legacy Business trials", () => {
+  const trial = { status_cobranca: "trial", selected_plan_slug: "business" };
+  assert.equal(checkoutInitialPlan(trial, "upgrade", "pro"), "starter");
+  assert.equal(checkoutCanSelect(trial, "upgrade"), false);
+  assert.equal(checkoutAccessPlan("trial", "business"), "starter");
+  assert.equal(checkoutAccessPlan("ativo", "business"), "business");
+});
+test("trial purchase only opens a paid checkout; active subscriptions still need safe reconciliation", () => {
+  assert.equal(decision({ companyStatus: "trial", mode: "purchase" }).kind, "create");
+  assert.equal(decision({ companyStatus: "ativo", mode: "purchase" }).kind, "support");
+  assert.equal(decision({ companyStatus: "trial", mode: "purchase", subscriptions: [sub], planId: "business-id" }).kind, "support");
+  assert.equal(checkoutCanSelect({ status_cobranca: "trial" }, "purchase"), true);
 });
