@@ -60,7 +60,7 @@ export const createCheckoutCompany = createServerFn({ method: "POST" })
         slug,
         primary_color: "#25D366",
         created_by: context.userId,
-        status_cobranca: hasTrial ? "trial" : "checkout_pending",
+        status_cobranca: companyStatusForPlan(trialDays),
         onboarding_completed: false,
         onboarding_step: 0,
         trial_ate: trialAte,
